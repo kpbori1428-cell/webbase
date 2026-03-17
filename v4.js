@@ -23,7 +23,7 @@ class V4Engine {
             return source;
         }
         if (typeof target === 'object' && target !== null && typeof source === 'object' && source !== null) {
-            const result = { ...target };
+            const result = Object.assign({}, target);
             for (const key in source) {
                 if (source[key] === null) continue;
                 if (typeof source[key] === 'object' && !Array.isArray(source[key])) {
@@ -122,8 +122,17 @@ class V4Engine {
 
                 // Visual Bounding Box (Only in Builder mode)
                 if (window.parent !== window) {
-                    document.querySelectorAll('.v4-selected').forEach(el => el.classList.remove('v4-selected'));
-                    node.classList.add('v4-selected');
+                    document.querySelectorAll('[data-v4-selected]').forEach(el => {
+                        el.style.outline = el.getAttribute('data-v4-old-outline') || '';
+                        el.style.outlineOffset = el.getAttribute('data-v4-old-offset') || '';
+                        el.removeAttribute('data-v4-selected');
+                    });
+
+                    node.setAttribute('data-v4-old-outline', node.style.outline || '');
+                    node.setAttribute('data-v4-old-offset', node.style.outlineOffset || '');
+                    node.style.outline = '2px solid #007acc';
+                    node.style.outlineOffset = '-2px';
+                    node.setAttribute('data-v4-selected', 'true');
                 }
 
                 if (window.parent !== window) {
@@ -143,7 +152,141 @@ class V4Engine {
         if (window.parent !== window) {
             node.setAttribute('data-v4-tag', tag);
 
-            // 1. Text Editing Visual (Doble Clic para editar)
+
+            // 0. Image Editing (Doble clic en imagenes)
+            if (tag === "img") {
+                node.addEventListener("dblclick", (e) => {
+                    e.stopPropagation();
+                    const url = prompt("Enter Image URL:", node.getAttribute("src") || "");
+                    if (url !== null) {
+                        if (!nodeData.properties) nodeData.properties = {};
+                        if (!nodeData.properties.attributes) nodeData.properties.attributes = {};
+                        nodeData.properties.attributes.src = url;
+                        node.setAttribute("src", url);
+                        this.updateNode(nodeData.path, { properties: { attributes: { src: url } } });
+                        this.saveState();
+                    }
+                });
+            }
+
+            // 0.5 Context Menu
+            node.addEventListener("contextmenu", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                document.querySelectorAll(".v4-context-menu").forEach(m => m.remove());
+
+                const menu = document.createElement("div");
+                menu.className = "v4-context-menu";
+                menu.style.position = "fixed";
+                menu.style.background = "#252526";
+                menu.style.border = "1px solid #454545";
+                menu.style.boxShadow = "0 4px 6px rgba(0,0,0,0.5)";
+                menu.style.zIndex = "99999";
+                menu.style.borderRadius = "4px";
+                menu.style.padding = "4px 0";
+                menu.style.color = "#d4d4d4";
+                menu.style.fontFamily = "sans-serif";
+                menu.style.fontSize = "12px";
+                menu.style.minWidth = "120px";
+
+                const styleBtn = (btn) => {
+                    btn.style.padding = "6px 12px";
+                    btn.style.cursor = "pointer";
+                    btn.addEventListener('mouseenter', () => { btn.style.background = "#007acc"; btn.style.color = "white"; });
+                    btn.addEventListener('mouseleave', () => { btn.style.background = "transparent"; btn.style.color = "#d4d4d4"; });
+                };
+
+                menu.style.left = e.clientX + "px";
+                menu.style.top = e.clientY + "px";
+
+                const duplicateBtn = document.createElement("div");
+                duplicateBtn.textContent = "⧉ Duplicate";
+                styleBtn(duplicateBtn);
+                duplicateBtn.onclick = () => {
+                    this.handleBuilderAction({ action: "DUPLICATE", path: nodeData.path });
+                    this.saveState();
+                    menu.remove();
+                };
+
+                const deleteBtn = document.createElement("div");
+                deleteBtn.textContent = "× Delete";
+                styleBtn(deleteBtn);
+                deleteBtn.style.color = "#ff6b6b";
+                deleteBtn.onclick = () => {
+                    this.handleBuilderAction({ action: "DELETE", path: nodeData.path });
+                    this.saveState();
+                    menu.remove();
+                };
+
+                menu.appendChild(duplicateBtn);
+                menu.appendChild(deleteBtn);
+                document.body.appendChild(menu);
+            });
+
+            // 0.7 Resize Handles Logic (Injected on selection click)
+            node.addEventListener('click', (e) => {
+                // Remove existing handles from everywhere
+                document.querySelectorAll(".v4-resize-handle").forEach(h => h.remove());
+
+                // Add handles to current node
+                const createHandle = (pos) => {
+                    const h = document.createElement("div");
+                    h.className = `v4-resize-handle v4-resize-${pos}`;
+                    h.style.position = "absolute";
+                    h.style.width = "8px";
+                    h.style.height = "8px";
+                    h.style.background = "white";
+                    h.style.border = "1px solid #007acc";
+                    h.style.zIndex = "10000";
+                    if (pos === "se") { h.style.bottom = "-4px"; h.style.right = "-4px"; h.style.cursor = "se-resize"; }
+                    if (pos === "e") { h.style.top = "50%"; h.style.right = "-4px"; h.style.transform = "translateY(-50%)"; h.style.cursor = "e-resize"; }
+                    if (pos === "s") { h.style.bottom = "-4px"; h.style.left = "50%"; h.style.transform = "translateX(-50%)"; h.style.cursor = "s-resize"; }
+
+
+                    h.addEventListener("mousedown", (ev) => {
+                        ev.stopPropagation();
+                        ev.preventDefault();
+
+                        const startX = ev.clientX;
+                        const startY = ev.clientY;
+                        const startWidth = node.getBoundingClientRect().width;
+                        const startHeight = node.getBoundingClientRect().height;
+
+                        const onMouseMove = (moveEvent) => {
+                            if (pos.includes("e")) node.style.width = (startWidth + (moveEvent.clientX - startX)) + "px";
+                            if (pos.includes("s")) node.style.height = (startHeight + (moveEvent.clientY - startY)) + "px";
+                        };
+
+                        const onMouseUp = () => {
+                            document.removeEventListener("mousemove", onMouseMove);
+                            document.removeEventListener("mouseup", onMouseUp);
+
+                            // Save to Engine
+                            const partialData = { properties: { style: {} } };
+                            if (pos.includes("e")) partialData.properties.style.width = node.style.width;
+                            if (pos.includes("s")) partialData.properties.style.height = node.style.height;
+
+                            this.updateNode(nodeData.path, partialData);
+                            this.saveState();
+
+                            // Notify Builder
+                            window.parent.postMessage({ type: "V4_NODE_SELECTED", path: nodeData.path, nodeData: this.findNodeByPath(this.dataTree, nodeData.path) }, "*");
+                        };
+
+                        document.addEventListener("mousemove", onMouseMove);
+                        document.addEventListener("mouseup", onMouseUp);
+                    });
+                    node.appendChild(h);
+                };
+
+                createHandle("se");
+                createHandle("e");
+                createHandle("s");
+            });
+
+            // 1. Text Editing Visual
+
             node.addEventListener('dblclick', (e) => {
                 e.stopPropagation();
                 node.setAttribute('contenteditable', 'true');
@@ -181,21 +324,35 @@ class V4Engine {
 
                 const rect = node.getBoundingClientRect();
                 const relativeY = e.clientY - rect.top;
-                node.classList.remove('v4-drag-insert-before', 'v4-drag-insert-after', 'v4-drag-over');
+
+                if (node.hasAttribute('data-v4-drag-pos')) {
+                    if (node.getAttribute('data-v4-drag-pos') === 'before') node.style.borderTop = node.getAttribute('data-v4-old-borderTop') || '';
+                    if (node.getAttribute('data-v4-drag-pos') === 'after') node.style.borderBottom = node.getAttribute('data-v4-old-borderBottom') || '';
+                    if (node.getAttribute('data-v4-drag-pos') === 'inside') node.style.border = node.getAttribute('data-v4-old-border') || '';
+                    node.removeAttribute('data-v4-drag-pos');
+                }
+
 
                 if (relativeY < rect.height / 4) {
-                    node.classList.add('v4-drag-insert-before');
+                    node.setAttribute('data-v4-old-borderTop', node.style.borderTop); node.style.borderTop = '3px solid #e74c3c'; node.setAttribute('data-v4-drag-pos', 'before');
                     e.dataTransfer.dropEffect = 'move';
                 } else if (relativeY > (rect.height * 3) / 4) {
-                    node.classList.add('v4-drag-insert-after');
+                    node.setAttribute('data-v4-old-borderBottom', node.style.borderBottom); node.style.borderBottom = '3px solid #e74c3c'; node.setAttribute('data-v4-drag-pos', 'after');
                     e.dataTransfer.dropEffect = 'move';
                 } else {
-                    node.classList.add('v4-drag-over');
+                    node.setAttribute('data-v4-old-border', node.style.border); node.style.border = '2px dashed #e67e22'; node.setAttribute('data-v4-drag-pos', 'inside');
                     e.dataTransfer.dropEffect = 'copy';
                 }
             });
             node.addEventListener('dragleave', (e) => {
-                node.classList.remove('v4-drag-insert-before', 'v4-drag-insert-after', 'v4-drag-over');
+
+                if (node.hasAttribute('data-v4-drag-pos')) {
+                    if (node.getAttribute('data-v4-drag-pos') === 'before') node.style.borderTop = node.getAttribute('data-v4-old-borderTop') || '';
+                    if (node.getAttribute('data-v4-drag-pos') === 'after') node.style.borderBottom = node.getAttribute('data-v4-old-borderBottom') || '';
+                    if (node.getAttribute('data-v4-drag-pos') === 'inside') node.style.border = node.getAttribute('data-v4-old-border') || '';
+                    node.removeAttribute('data-v4-drag-pos');
+                }
+
             });
             node.addEventListener('drop', (e) => {
                 e.preventDefault();
@@ -205,8 +362,15 @@ class V4Engine {
                 const newTag = e.dataTransfer.getData('v4/new-tag');
                 const newText = e.dataTransfer.getData('v4/new-text');
 
-                const insertPos = node.classList.contains('v4-drag-insert-before') ? 'before' : (node.classList.contains('v4-drag-insert-after') ? 'after' : 'inside');
-                node.classList.remove('v4-drag-insert-before', 'v4-drag-insert-after', 'v4-drag-over');
+                const insertPos = node.getAttribute('data-v4-drag-pos') || 'inside';
+
+                if (node.hasAttribute('data-v4-drag-pos')) {
+                    if (node.getAttribute('data-v4-drag-pos') === 'before') node.style.borderTop = node.getAttribute('data-v4-old-borderTop') || '';
+                    if (node.getAttribute('data-v4-drag-pos') === 'after') node.style.borderBottom = node.getAttribute('data-v4-old-borderBottom') || '';
+                    if (node.getAttribute('data-v4-drag-pos') === 'inside') node.style.border = node.getAttribute('data-v4-old-border') || '';
+                    node.removeAttribute('data-v4-drag-pos');
+                }
+
 
                 if (newTag) {
                     const newNode = {
@@ -238,6 +402,105 @@ class V4Engine {
             });
         }
 
+
+        // Builder Logic Directives (Restaurado como Directivas Declarativas)
+        if (nodeData.directives) {
+
+            // 1. Initialize Tree View when loaded
+            if (nodeData.directives.initTree) {
+                this.treeViewContainer = node;
+            }
+
+            // 2. Refresh Tree Button
+            if (nodeData.directives.refreshTree) {
+                node.addEventListener('click', () => {
+                    const iframe = document.getElementById('canvas');
+                    if (iframe) iframe.contentWindow.postMessage({ type: 'V4_GET_TREE' }, '*');
+                });
+            }
+
+            // 3. Make Palette Items Draggable
+            if (nodeData.directives.paletteItem) {
+                node.setAttribute('draggable', 'true');
+                node.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('v4/new-tag', (nodeData.attributes && nodeData.attributes['data-tag']) || node.getAttribute('data-tag'));
+                    e.dataTransfer.setData('v4/new-text', (nodeData.attributes && nodeData.attributes['data-text']) || node.getAttribute('data-text'));
+                    e.dataTransfer.effectAllowed = 'copy';
+                });
+            }
+
+            // 4. Listen to Iframe Selection (Outer Builder mode)
+            if (nodeData.directives.iframeCanvas) {
+
+                // Initialize engine when iframe mounts
+                node.addEventListener('load', () => {
+                    if (node.contentWindow) {
+                        node.contentWindow.postMessage({ type: 'V4_GET_TREE' }, '*');
+                    }
+                });
+
+                window.addEventListener('message', (event) => {
+                    const data = event.data;
+                    if (!data) return;
+
+                    if (data.type === 'V4_ENGINE_MOUNTED') {
+                        node.contentWindow.postMessage({ type: 'V4_GET_TREE' }, '*');
+                    }
+                    else if (data.type === 'V4_TREE_DATA') {
+                        if (this.treeViewContainer) {
+                            this.treeViewContainer.innerHTML = '';
+                            const roots = Array.isArray(data.tree) ? data.tree : [data.tree.root || data.tree];
+                            roots.forEach(r => this.treeViewContainer.appendChild(this.createTreeNode(r, node)));
+                        }
+                    }
+                    else if (data.type === 'V4_NODE_SELECTED') {
+                        // Update Inspector Inputs based on ID
+                        const updateInput = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+                        document.getElementById('no-selection').style.display = 'none';
+                        document.getElementById('controls').style.display = 'block';
+
+                        updateInput('prop-path', data.path);
+                        updateInput('prop-tag', data.nodeData.tag || 'div');
+                        updateInput('prop-text', data.nodeData.text || '');
+
+                        if (data.nodeData.properties && data.nodeData.properties.style) {
+                            const styles = data.nodeData.properties.style;
+                            updateInput('style-backgroundColor', styles.backgroundColor || '#ffffff');
+                            updateInput('style-width', styles.width);
+                            updateInput('style-height', styles.height);
+                        }
+
+                        // Setup reactive patches
+                        this.currentSelectedPath = data.path;
+                    }
+                });
+
+                // Reactive Inputs
+                const bindInput = (id, key, isStyle) => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('input', (e) => {
+                            if (!this.currentSelectedPath) return;
+                            const patch = isStyle ? { properties: { style: {} } } : {};
+                            if (isStyle) patch.properties.style[key] = e.target.value;
+                            else patch[key] = e.target.value;
+                            node.contentWindow.postMessage({ type: 'V4_BUILDER_PATCH', path: this.currentSelectedPath, patch: patch }, '*');
+                            document.getElementById('save-status').textContent = 'Unsaved changes...';
+                        });
+                    }
+                };
+
+                // We use setTimeout to ensure elements are mounted
+                setTimeout(() => {
+                    bindInput('prop-tag', 'tag', false);
+                    bindInput('prop-text', 'text', false);
+                    bindInput('style-backgroundColor', 'backgroundColor', true);
+                    bindInput('style-width', 'width', true);
+                    bindInput('style-height', 'height', true);
+                }, 500);
+            }
+        }
+
         // Physics registration
         if (nodeData.directives && nodeData.directives.physics) {
             this.physicsNodes.push({ domNode: node, data: nodeData, physics: nodeData.directives.physics });
@@ -252,6 +515,38 @@ class V4Engine {
 
         parentElement.appendChild(node);
         return node;
+    }
+
+
+    createTreeNode(nodeData, iframeRef) {
+        const wrapper = document.createElement('div');
+        wrapper.style.padding = "5px 0 5px 15px";
+        wrapper.style.cursor = "pointer";
+        wrapper.style.userSelect = "none";
+
+        const label = document.createElement('div');
+        label.style.display = "flex";
+        label.style.justifyContent = "space-between";
+        label.style.alignItems = "center";
+
+        label.innerHTML = `<span style="color:#569cd6; font-weight:bold; margin-right:5px;">${nodeData.tag || 'div'}</span> <span style="color:#ce9178; font-size:11px;">${nodeData.id ? '#' + nodeData.id : ''}</span>`;
+
+        label.onclick = (e) => {
+            e.stopPropagation();
+            iframeRef.contentWindow.postMessage({ type: 'V4_BUILDER_PATCH', path: nodeData.path, patch: {} }, '*'); // Dummy patch to trigger selection highlight conceptually, or just let engine know
+        };
+        wrapper.appendChild(label);
+
+        if (nodeData.children && nodeData.children.length > 0) {
+            const childrenContainer = document.createElement('div');
+            childrenContainer.style.marginLeft = "10px";
+            childrenContainer.style.borderLeft = "1px solid #404040";
+            nodeData.children.forEach(child => {
+                childrenContainer.appendChild(this.createTreeNode(child, iframeRef));
+            });
+            wrapper.appendChild(childrenContainer);
+        }
+        return wrapper;
     }
 
     applyProperties(node, properties) {
@@ -517,21 +812,14 @@ class V4Engine {
 
     // La Capa del Creador (The Builder Bridge)
     setupBuilderBridge() {
-        // Inject Canvas Styles
-        if (!document.getElementById('v4-canvas-styles')) {
-            const style = document.createElement('style');
-            style.id = 'v4-canvas-styles';
-            style.innerHTML = `
-                .v4-selected { outline: 2px solid #007acc; outline-offset: -2px; position: relative; }
-                .v4-selected::after { content: attr(data-v4-tag); position: absolute; top: -20px; left: -2px; background: #007acc; color: white; padding: 2px 6px; font-size: 10px; border-radius: 2px 2px 0 0; text-transform: uppercase; z-index: 9999; }
-                .v4-drag-over { border: 2px dashed #e67e22 !important; }
-                .v4-drag-insert-before { border-top: 3px solid #e74c3c !important; }
-                .v4-drag-insert-after { border-bottom: 3px solid #e74c3c !important; }
-            `;
-            document.head.appendChild(style);
-        }
 
         // Global Undo/Redo listeners
+
+        // Global Click to close context menus
+        window.addEventListener("click", () => {
+            document.querySelectorAll(".v4-context-menu").forEach(m => m.remove());
+        });
+
         window.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                 e.preventDefault();
