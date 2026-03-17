@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecosistema V4 - Builder Total</title>
+    <style>
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1e1e1e; color: #d4d4d4; }
+
+        /* Layout */
+        #left-sidebar { width: 280px; background: #252526; border-right: 1px solid #3c3c3c; display: flex; flex-direction: column; }
+        #canvas-container { flex: 1; display: flex; flex-direction: column; background: #000; }
+        #right-sidebar { width: 320px; background: #252526; border-left: 1px solid #3c3c3c; display: flex; flex-direction: column; overflow-y: auto; }
+
+        /* Headers */
+        .sidebar-header { padding: 15px; background: #333333; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #3c3c3c; display: flex; justify-content: space-between; align-items: center; }
+
+        /* Tree View */
+        #tree-view { flex: 1; overflow-y: auto; padding: 10px; white-space: nowrap; }
+        .tree-node { padding: 5px 0 5px 15px; cursor: pointer; user-select: none; font-size: 13px; position: relative; }
+        .tree-node:hover > .node-label { background: #2a2d2e; }
+        .tree-node.selected > .node-label { background: #37373d; border-left: 3px solid #007acc; }
+        .node-label { display: flex; justify-content: space-between; align-items: center; padding: 4px; border-radius: 3px; border-left: 3px solid transparent; transition: background 0.1s; }
+        .node-tag { color: #569cd6; font-weight: bold; margin-right: 5px; }
+        .node-id { color: #ce9178; font-size: 11px; }
+        .node-actions { display: none; }
+        .node-label:hover .node-actions { display: flex; gap: 5px; }
+        .action-btn { background: none; border: none; color: #858585; cursor: pointer; padding: 0 5px; font-size: 12px; }
+        .action-btn:hover { color: #d4d4d4; }
+        .children-container { margin-left: 10px; border-left: 1px solid #404040; }
+
+        /* Inspector */
+        #inspector-content { padding: 15px; }
+        .panel-section { margin-bottom: 20px; border-bottom: 1px solid #3c3c3c; padding-bottom: 15px; }
+        .panel-section h3 { margin: 0 0 10px 0; font-size: 13px; color: #9cdcfe; text-transform: uppercase; }
+
+        .prop-row { display: flex; margin-bottom: 8px; align-items: center; }
+        .prop-row label { width: 100px; font-size: 12px; color: #cccccc; }
+        .prop-row input, .prop-row select { flex: 1; background: #3c3c3c; border: 1px solid #555; color: white; padding: 4px 8px; border-radius: 3px; font-size: 12px; }
+        .prop-row input:focus, .prop-row select:focus { outline: none; border-color: #007acc; }
+        .prop-row input[type="color"] { padding: 0; height: 24px; cursor: pointer; }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: #858585; font-style: italic; font-size: 13px; }
+
+        /* Canvas */
+        #toolbar { height: 40px; background: #333333; display: flex; align-items: center; padding: 0 15px; gap: 10px; border-bottom: 1px solid #1e1e1e; }
+        .device-btn { background: #444; border: none; color: white; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-size: 12px; }
+        .device-btn.active { background: #007acc; }
+        #canvas-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; background: white; border: none; box-shadow: 0 0 20px rgba(0,0,0,0.5); transition: width 0.3s, height 0.3s; }
+
+        /* Layout presets for canvas */
+        .desktop { width: 100% !important; height: 100% !important; }
+        .tablet { width: 768px !important; height: 1024px !important; }
+        .mobile { width: 375px !important; height: 812px !important; }
+
+        button.primary { background: #007acc; color: white; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; }
+        button.primary:hover { background: #005f9e; }
+    </style>
+</head>
+<body>
+
+    <!-- Left Sidebar: Tree View -->
+    <div id="left-sidebar">
+        <div class="sidebar-header">
+            Layers
+            <button id="refresh-tree" class="action-btn" title="Refresh Tree">↻</button>
+        </div>
+        <!-- Palette (Add Elements) -->
+        <div class="sidebar-header" style="border-top: 1px solid #3c3c3c; margin-top: 10px;">
+            Components (Drag to Canvas)
+        </div>
+        <div id="palette" style="padding: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
+            <div class="palette-item" draggable="true" data-tag="div" data-text="" style="background:#333; padding:8px; border-radius:4px; font-size:12px; cursor:grab; border:1px solid #555; width:calc(50% - 4px); text-align:center;">Box / Container</div>
+            <div class="palette-item" draggable="true" data-tag="h2" data-text="New Heading" style="background:#333; padding:8px; border-radius:4px; font-size:12px; cursor:grab; border:1px solid #555; width:calc(50% - 4px); text-align:center;">Heading</div>
+            <div class="palette-item" draggable="true" data-tag="p" data-text="New Paragraph text here." style="background:#333; padding:8px; border-radius:4px; font-size:12px; cursor:grab; border:1px solid #555; width:calc(50% - 4px); text-align:center;">Text</div>
+            <div class="palette-item" draggable="true" data-tag="button" data-text="Button" style="background:#333; padding:8px; border-radius:4px; font-size:12px; cursor:grab; border:1px solid #555; width:calc(50% - 4px); text-align:center;">Button</div>
+            <div class="palette-item" draggable="true" data-tag="img" data-text="" style="background:#333; padding:8px; border-radius:4px; font-size:12px; cursor:grab; border:1px solid #555; width:100%; text-align:center;">Image</div>
+        </div>
+
+        <div id="tree-view">
+            <div class="empty-state">Loading tree...</div>
+        </div>
+    </div>
+
+    <!-- Center: Canvas Area -->
+    <div id="canvas-container">
+        <div id="toolbar">
+            <button class="device-btn active" data-device="desktop">Desktop</button>
+            <button class="device-btn" data-device="tablet">Tablet</button>
+            <button class="device-btn" data-device="mobile">Mobile</button>
+            <div style="flex:1"></div>
+            <span id="save-status" style="font-size:12px; color:#858585;">All changes saved</span>
+            <button id="btn-save" class="device-btn" style="background:#0e639c;">Save (Mock)</button>
+        </div>
+        <div id="canvas-wrapper">
+            <iframe id="canvas" class="desktop" src="index.html"></iframe>
+        </div>
+    </div>
+
+    <!-- Right Sidebar: Inspector -->
+    <div id="right-sidebar">
+        <div class="sidebar-header">Inspector</div>
+        <div id="inspector-content">
+            <div id="no-selection" class="empty-state">Select a node in the canvas or tree to inspect properties.<br><br>💡 <b>Tip:</b> Double-click text in the canvas to edit it directly.<br>🖱️ <b>Drag & Drop:</b> Move elements on the canvas manually.</div>
+
+            <div id="controls" style="display: none;">
+                <div class="panel-section">
+                    <h3>Identity</h3>
+                    <div class="prop-row">
+                        <label>Tag</label>
+                        <input type="text" id="prop-tag">
+                    </div>
+                    <div class="prop-row">
+                        <label>Path</label>
+                        <input type="text" id="prop-path" disabled style="color:#858585;">
+                    </div>
+                    <div class="prop-row">
+                        <label>Text</label>
+                        <input type="text" id="prop-text">
+                    </div>
+                </div>
+
+                <div class="panel-section" id="layout-panel">
+                    <h3>Layout</h3>
+                    <div class="prop-row">
+                        <label>Display</label>
+                        <select id="style-display">
+                            <option value="">Default</option>
+                            <option value="block">Block</option>
+                            <option value="flex">Flex</option>
+                            <option value="grid">Grid</option>
+                            <option value="none">None</option>
+                        </select>
+                    </div>
+                    <div class="prop-row">
+                        <label>Width</label>
+                        <input type="text" id="style-width" placeholder="e.g. 100%, 200px">
+                    </div>
+                    <div class="prop-row">
+                        <label>Height</label>
+                        <input type="text" id="style-height" placeholder="e.g. auto, 100vh">
+                    </div>
+                </div>
+
+                <div class="panel-section" id="spacing-panel">
+                    <h3>Spacing</h3>
+                    <div class="prop-row">
+                        <label>Margin</label>
+                        <input type="text" id="style-margin" placeholder="0px">
+                    </div>
+                    <div class="prop-row">
+                        <label>Padding</label>
+                        <input type="text" id="style-padding" placeholder="0px">
+                    </div>
+                </div>
+
+                <div class="panel-section" id="appearance-panel">
+                    <h3>Appearance</h3>
+                    <div class="prop-row">
+                        <label>Background</label>
+                        <input type="color" id="style-backgroundColor" value="#ffffff">
+                    </div>
+                    <div class="prop-row">
+                        <label>Color</label>
+                        <input type="color" id="style-color" value="#000000">
+                    </div>
+                    <div class="prop-row">
+                        <label>Border</label>
+                        <input type="text" id="style-border" placeholder="1px solid black">
+                    </div>
+                    <div class="prop-row">
+                        <label>Border Radius</label>
+                        <input type="text" id="style-borderRadius" placeholder="4px">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const iframe = document.getElementById('canvas');
+        const treeView = document.getElementById('tree-view');
+        const controls = document.getElementById('controls');
+        const noSelection = document.getElementById('no-selection');
+
+        let currentTree = null;
+        let selectedPath = null;
+        let selectedNodeData = null;
+
+        // Device Toolbar
+        document.querySelectorAll('.device-btn').forEach(btn => {
+            if(btn.id === 'btn-save') return;
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                iframe.className = e.target.dataset.device;
+            });
+        });
+
+        // Communication with Engine
+        window.addEventListener('message', (event) => {
+            const data = event.data;
+            if (!data) return;
+            if (data.type === 'V4_BUILDER_PATCH') {
+                document.getElementById('save-status').textContent = 'Unsaved canvas changes...';
+                // Update text in inspector if it is currently selected
+                if (data.path === selectedPath && data.patch.text !== undefined) {
+                    document.getElementById('prop-text').value = data.patch.text;
+                }
+            }
+
+            if (data.type === 'V4_ENGINE_MOUNTED') {
+                console.log("Builder: Engine Mounted. Requesting Tree...");
+                iframe.contentWindow.postMessage({ type: 'V4_GET_TREE' }, '*');
+            }
+            else if (data.type === 'V4_TREE_DATA') {
+                currentTree = data.tree;
+                renderTreeView();
+            }
+            else if (data.type === 'V4_NODE_SELECTED') {
+                selectNode(data.path, data.nodeData);
+            }
+        });
+
+        document.querySelectorAll(".palette-item").forEach(item => {
+            item.addEventListener("dragstart", (e) => {
+                e.dataTransfer.setData("v4/new-tag", e.target.dataset.tag);
+                e.dataTransfer.setData("v4/new-text", e.target.dataset.text);
+                // Firefox compatibility
+                e.dataTransfer.effectAllowed = "copy";
+            });
+        });
+
+        document.getElementById('refresh-tree').addEventListener('click', () => {
+            iframe.contentWindow.postMessage({ type: 'V4_GET_TREE' }, '*');
+        });
+
+        // --- Tree View Rendering ---
+        function renderTreeView() {
+            if (!currentTree) return;
+            treeView.innerHTML = '';
+
+            // Assume tree is an array or an object with children
+            const treeData = currentTree.root || currentTree;
+            const rootNodes = Array.isArray(treeData) ? treeData : [treeData];
+
+            rootNodes.forEach(node => {
+                treeView.appendChild(createTreeNodeElement(node));
+            });
+        }
+
+        function createTreeNodeElement(node) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'tree-node';
+            if (node.path === selectedPath) wrapper.classList.add('selected');
+
+            const label = document.createElement('div');
+            label.className = 'node-label';
+
+            const info = document.createElement('span');
+            info.innerHTML = `<span class="node-tag">${node.tag || 'div'}</span> <span class="node-id">${node.id ? '#' + node.id : ''}</span>`;
+
+            const actions = document.createElement('div');
+            actions.className = 'node-actions';
+
+            const btnAdd = document.createElement('button');
+            btnAdd.className = 'action-btn';
+            btnAdd.textContent = '+';
+            btnAdd.title = 'Add Child';
+            btnAdd.onclick = (e) => { e.stopPropagation(); sendBuilderAction('ADD', node.path, {tag: 'div'}); };
+
+            const btnDup = document.createElement('button');
+            btnDup.className = 'action-btn';
+            btnDup.textContent = '⧉';
+            btnDup.title = 'Duplicate';
+            btnDup.onclick = (e) => { e.stopPropagation(); sendBuilderAction('DUPLICATE', node.path); };
+
+            const btnDel = document.createElement('button');
+            btnDel.className = 'action-btn';
+            btnDel.textContent = '×';
+            btnDel.title = 'Delete';
+            btnDel.onclick = (e) => { e.stopPropagation(); sendBuilderAction('DELETE', node.path); };
+
+            actions.appendChild(btnAdd);
+            actions.appendChild(btnDup);
+            actions.appendChild(btnDel);
+
+            label.appendChild(info);
+            label.appendChild(actions);
+
+            label.onclick = (e) => {
+                e.stopPropagation();
+                // We send a message to engine, but we can also just select locally
+                selectNode(node.path, node);
+            };
+
+            wrapper.appendChild(label);
+
+            if (node.children && node.children.length > 0) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'children-container';
+                node.children.forEach(child => {
+                    childrenContainer.appendChild(createTreeNodeElement(child));
+                });
+                wrapper.appendChild(childrenContainer);
+            }
+
+            return wrapper;
+        }
+
+        // --- Inspector Logic ---
+        function selectNode(path, nodeData) {
+            selectedPath = path;
+            selectedNodeData = nodeData;
+
+            // Update Tree View selection visually
+            document.querySelectorAll('.tree-node').forEach(el => el.classList.remove('selected'));
+            renderTreeView(); // Re-render to ensure highlights are correct
+
+            // Show Inspector
+            noSelection.style.display = 'none';
+            controls.style.display = 'block';
+
+            // Populate Identity
+            document.getElementById('prop-path').value = path || '';
+            document.getElementById('prop-tag').value = nodeData.tag || 'div';
+            document.getElementById('prop-text').value = nodeData.text || '';
+
+            // Populate Styles safely
+            const styles = (nodeData.properties && nodeData.properties.style) ? nodeData.properties.style : {};
+
+            const styleProps = ['display', 'width', 'height', 'margin', 'padding', 'backgroundColor', 'color', 'border', 'borderRadius'];
+
+            styleProps.forEach(prop => {
+                const el = document.getElementById('style-' + prop);
+                if (el) {
+                    if (el.type === 'color') {
+                        // Color inputs require full hex
+                        let val = styles[prop] || '#000000';
+                        if(prop === 'backgroundColor' && !styles[prop]) val = '#ffffff';
+                        // Very naive hex check, in real builder need rgb/rgba to hex converter
+                        if (val.startsWith('#') && (val.length === 4 || val.length === 7)) {
+                            el.value = val;
+                        }
+                    } else {
+                        el.value = styles[prop] || '';
+                    }
+                }
+            });
+        }
+
+        function sendPatch(patch) {
+            if (!selectedPath) return;
+            iframe.contentWindow.postMessage({
+                type: 'V4_BUILDER_PATCH',
+                path: selectedPath,
+                patch: patch
+            }, '*');
+
+            // Update local tree ref immediately for snappier UI
+            document.getElementById('save-status').textContent = 'Unsaved changes...';
+        }
+
+        function sendBuilderAction(action, path, payload = null) {
+            iframe.contentWindow.postMessage({
+                type: 'V4_BUILDER_ACTION',
+                action: action,
+                path: path,
+                payload: payload
+            }, '*');
+        }
+
+        // --- Attach Event Listeners to Inspector Inputs ---
+        document.getElementById('prop-tag').addEventListener('change', (e) => sendPatch({ tag: e.target.value }));
+        document.getElementById('prop-text').addEventListener('input', (e) => sendPatch({ text: e.target.value }));
+
+        const styleInputs = ['display', 'width', 'height', 'margin', 'padding', 'backgroundColor', 'color', 'border', 'borderRadius'];
+        styleInputs.forEach(prop => {
+            const el = document.getElementById('style-' + prop);
+            if (el) {
+                const eventType = el.type === 'color' || el.tagName === 'SELECT' ? 'change' : 'input';
+                el.addEventListener(eventType, (e) => {
+                    const patch = { properties: { style: {} } };
+                    patch.properties.style[prop] = e.target.value;
+                    sendPatch(patch);
+                });
+            }
+        });
+
+        document.getElementById('btn-save').addEventListener('click', () => {
+            document.getElementById('save-status').textContent = 'Saved to JSON (Mock)!';
+            setTimeout(() => document.getElementById('save-status').textContent = 'All changes saved', 2000);
+            console.log("Mock Save: The builder would normally send the currentTree to a backend endpoint here.");
+        });
+
+    </script>
+</body>
+</html>

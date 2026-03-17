@@ -1,0 +1,32 @@
+{
+  "children": [
+    {
+      "tag": "div",
+      "path": "hydrated.user.card",
+      "properties": {
+        "style": {
+          "padding": "20px",
+          "backgroundColor": "#2980b9",
+          "color": "white",
+          "borderRadius": "8px",
+          "margin": "10px",
+          "boxShadow": "0 4px 6px rgba(0,0,0,0.1)"
+        }
+      },
+      "children": [
+        {
+          "tag": "h3",
+          "path": "hydrated.user.card.name",
+          "text": "Data Hydrated Successfully",
+          "properties": { "style": { "margin": "0 0 10px 0" } }
+        },
+        {
+          "tag": "p",
+          "path": "hydrated.user.card.role",
+          "text": "Simulated API Response",
+          "properties": { "style": { "margin": "0" } }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- El HTML es un contenedor vacío. Cero Generación de HTML. -->
+</head>
+<body style="margin: 0; padding: 0; box-sizing: border-box; font-family: sans-serif;">
+    <div id="app"></div>
+    <script src="v4.js"></script>
+    <script>
+        // Inicialización del Motor apuntando al Árbol de Definición Único
+        const engine = new V4Engine('app');
+        engine.init('tree.json');
+    </script>
+</body>
+</html>
