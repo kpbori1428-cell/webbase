@@ -13,6 +13,25 @@ class V4Engine {
         this.nodeRegistry = new Map(); // path -> DOM Node
         this.lastFrameTime = 0;
         this.physicsNodes = [];
+
+        // Centralized Global Engine State (to prevent memory leaks from per-node listeners)
+        this.globalMouseX = 0;
+        this.globalMouseY = 0;
+        this.globalScrollY = 0;
+        this.globalWindowWidth = window.innerWidth;
+        this.globalWindowHeight = window.innerHeight;
+
+        window.addEventListener('mousemove', (e) => {
+            this.globalMouseX = e.clientX;
+            this.globalMouseY = e.clientY;
+        });
+        window.addEventListener('scroll', () => {
+            this.globalScrollY = window.scrollY;
+        });
+        window.addEventListener('resize', () => {
+            this.globalWindowWidth = window.innerWidth;
+            this.globalWindowHeight = window.innerHeight;
+        });
     }
 
     // -----------------------------------------------------
@@ -131,6 +150,12 @@ class V4Engine {
                 });
                 if (selectedPaths.length > 0) window.parent.postMessage({ type: 'V4_NODE_SELECTED', path: selectedPaths[0], nodeData: this.findNodeByPath(this.dataTree, selectedPaths[0]) }, '*');
                 marqueeBox.remove(); marqueeBox = null;
+            }
+        });
+
+        document.body.addEventListener('dblclick', (e) => {
+            if (e.target === document.body || e.target === this.rootElement) {
+                this.exitIsolationMode();
             }
         });
 
@@ -285,7 +310,8 @@ class V4Engine {
             nodeData = this.deepMerge(masterTemplate, nodeData); // Apply specific patches
         }
 
-        // Hydration de API
+
+    // Hydration de API
         if (nodeData.directives && nodeData.directives.fetch) {
             this.hydrateNode(nodeData, parentElement, depth);
             return; // Suspende renderizado hasta que la promesa resuelva
@@ -301,252 +327,160 @@ class V4Engine {
         if (nodeData.path) {
             node.setAttribute('data-v4-path', nodeData.path);
             this.nodeRegistry.set(nodeData.path, node);
-
-            // Protocolo de Selección: Emisión de Path al inspector
-            node.addEventListener('click', (e) => {
-                e.stopPropagation();
-
-                // Visual Bounding Box (Only in Builder mode)
-                if (window.parent !== window) {
-                    document.querySelectorAll('[data-v4-selected]').forEach(el => {
-                        el.style.outline = el.getAttribute('data-v4-old-outline') || '';
-                        el.style.outlineOffset = el.getAttribute('data-v4-old-offset') || '';
-                        el.removeAttribute('data-v4-selected');
-                    });
-
-                    node.setAttribute('data-v4-old-outline', node.style.outline || '');
-                    node.setAttribute('data-v4-old-offset', node.style.outlineOffset || '');
-                    node.style.outline = '2px solid #007acc';
-                    node.style.outlineOffset = '-2px';
-                    node.setAttribute('data-v4-selected', 'true');
-                }
-
-                if (window.parent !== window) {
-                    window.parent.postMessage({
-                        type: 'V4_NODE_SELECTED',
-                        path: nodeData.path,
-                        nodeData: nodeData
-                    }, '*');
-                }
-            });
         }
 
-                // --- Dynamic Transform Stacking (Física Avanzada V4) ---
+        // --- Dynamic Transform Stacking (Física Avanzada V4) ---
         // Setup safe defaults
         node.style.setProperty('--base-transform', nodeData.properties?.style?.transform || 'translate3d(0,0,0)');
         node.style.setProperty('--dyn-drag', 'translate3d(0,0,0)');
+        node.style.setProperty('--dyn-rotate', '');
         node.style.setProperty('--dyn-mouse-follow', 'translate3d(0,0,0)');
         node.style.setProperty('--dyn-look-at', 'rotateX(0deg) rotateY(0deg)');
         node.style.setProperty('--dyn-auto-animate', 'rotateX(0deg) rotateY(0deg) rotateZ(0deg) translateY(0px)');
 
-        node.style.transform = `var(--base-transform) var(--dyn-drag) var(--dyn-mouse-follow) var(--dyn-look-at) var(--dyn-auto-animate)`.trim();
+        node.style.transform = `var(--base-transform) var(--dyn-drag) var(--dyn-rotate) var(--dyn-scroll) var(--dyn-mouse-follow) var(--dyn-look-at) var(--dyn-auto-animate)`.trim();
 
         // Aplicar Propiedades (Atributos y Estilos)
         this.applyProperties(node, nodeData.properties);
 
-        // --- MODOS VISUALES (CANVAS INTERACTIVO) ---
-        if (window.parent !== window) {
-            node.setAttribute('data-v4-tag', tag);
+        if (nodeData.path) {
+            // Protocolo de Selección: Emisión de Path al inspector
 
-
-            // 0. Image Editing (Doble clic en imagenes)
-            if (tag === "img") {
-                node.addEventListener("dblclick", (e) => {
-                    e.stopPropagation();
-                    const url = prompt("Enter Image URL:", node.getAttribute("src") || "");
-                    if (url !== null) {
-                        if (!nodeData.properties) nodeData.properties = {};
-                        if (!nodeData.properties.attributes) nodeData.properties.attributes = {};
-                        nodeData.properties.attributes.src = url;
-                        node.setAttribute("src", url);
-                        this.updateNode(nodeData.path, { properties: { attributes: { src: url } } });
-                        this.saveState();
-                    }
-                });
-            }
-
-            // 2. Advanced Draggable Canvas (Builder Absolute / Production Inertia)
-            let isDragging = false;
-            let startX, startY, initialLeft, initialTop;
-
-            // Variables para Inercia y Física
-            let velocityX = 0, velocityY = 0;
-            let lastX = 0, lastY = 0;
-            let lastTime = 0;
-            let inertiaFrameId = null;
-
-            node.addEventListener('mousedown', (e) => {
-                if (e.target.classList.contains('v4-resize-handle') || node.getAttribute('contenteditable') === 'true') return;
-
+            // 0.7 Visual Manipulation Controls (Scale / Rotate)
+            node.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (inertiaFrameId) cancelAnimationFrame(inertiaFrameId);
 
-                // Builder Mode: Set absolute
-                if (window.parent !== window) {
-                    if (node.style.position !== 'absolute') {
+                // Only act in Builder mode
+                if (window.parent === window) return;
+
+                // Grouping Logic: If we are not in isolation mode for this node's parent,
+                // and this node is part of a complex group (e.g., inside a hero section),
+                // we should select the highest level parent that is considered a "Group".
+                // For simplicity, any node with absolute positioning and children is a group.
+                let targetNode = node;
+                let targetData = nodeData;
+
+                if (this.isolatedPath && !nodeData.path.startsWith(this.isolatedPath)) {
+                    // Clicked completely outside the isolated group, exit isolation
+                    this.exitIsolationMode();
+                } else if (!this.isolatedPath && node.parentElement && node.parentElement !== this.rootElement) {
+                    // We are deep in a tree, but not isolated. Bubble up selection to the highest 'absolute' parent
+                    let parent = node.parentElement;
+                    while (parent && parent !== this.rootElement && parent.hasAttribute('data-v4-path')) {
+                        if (parent.style.position === 'absolute') {
+                            targetNode = parent;
+                            targetData = this.findNodeByPath(this.dataTree, parent.getAttribute('data-v4-path'));
+                        }
+                        parent = parent.parentElement;
+                    }
+                }
+
+                const corners = ['nw', 'ne', 'se', 'sw'];
+                corners.forEach(pos => {
+                    const h = document.createElement('div');
+                    h.className = `v4-resize-handle v4-resize-${pos}`;
+
+                    h.addEventListener('mousedown', (ev) => {
+                        ev.stopPropagation(); ev.preventDefault();
+                        const startX = ev.clientX; const startY = ev.clientY;
                         const rect = node.getBoundingClientRect();
-                        node.style.position = 'absolute';
-                        node.style.left = rect.left + 'px';
-                        node.style.top = rect.top + 'px';
-                        node.style.margin = '0';
-                    }
-                }
+                        const startWidth = rect.width; const startHeight = rect.height;
+                        const startLeft = parseFloat(node.style.left || rect.left);
+                        const startTop = parseFloat(node.style.top || rect.top);
 
-                isDragging = true;
-                startX = e.clientX; startY = e.clientY;
-                lastX = e.clientX; lastY = e.clientY;
-                lastTime = performance.now();
-                velocityX = 0; velocityY = 0;
+                        const zoom = window.__v4CanvasZoom ? window.__v4CanvasZoom() : 1;
 
-                // Extraer Offset
-                const currentDragStr = node.style.getPropertyValue('--dyn-drag');
-                const match = currentDragStr.match(/translate3d\(([-.\d]+)px,\s*([-.\d]+)px/);
-                initialLeft = match ? parseFloat(match[1]) : 0;
-                initialTop = match ? parseFloat(match[2]) : 0;
+                        const onMouseMove = (moveEvent) => {
+                            const dx = (moveEvent.clientX - startX) / zoom;
+                            const dy = (moveEvent.clientY - startY) / zoom;
 
-                node.style.zIndex = '1000';
-                node.style.cursor = 'grabbing';
-            });
+                            let newWidth = startWidth; let newHeight = startHeight;
+                            let newLeft = startLeft; let newTop = startTop;
 
-            document.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
+                            if (pos.includes('e')) newWidth = startWidth + dx;
+                            if (pos.includes('w')) { newWidth = startWidth - dx; newLeft = startLeft + dx; }
+                            if (pos.includes('s')) newHeight = startHeight + dy;
+                            if (pos.includes('n')) { newHeight = startHeight - dy; newTop = startTop + dy; }
 
-                const zoom = window.__v4CanvasZoom ? window.__v4CanvasZoom() : 1;
-                let dx = (e.clientX - startX) / zoom;
-                let dy = (e.clientY - startY) / zoom;
+                            // Prevent negative sizes
+                            if (newWidth > 10) { node.style.width = newWidth + 'px'; node.style.left = newLeft + 'px'; }
+                            if (newHeight > 10) { node.style.height = newHeight + 'px'; node.style.top = newTop + 'px'; }
+                        };
 
-                // --- Smart Snapping (Guías Magnéticas) en Modo Builder ---
-                if (window.parent !== window) {
-                    document.querySelectorAll('.v4-smart-guide').forEach(g => g.remove());
-                    const SNAP_DISTANCE = 10;
+                        const onMouseUp = () => {
+                            document.removeEventListener('mousemove', onMouseMove);
+                            document.removeEventListener('mouseup', onMouseUp);
 
-                    const currentRect = node.getBoundingClientRect();
-                    const proposedLeft = initialLeft + dx;
-                    const proposedTop = initialTop + dy;
-                    const proposedRight = proposedLeft + currentRect.width;
-                    const proposedBottom = proposedTop + currentRect.height;
-                    const proposedCenterX = proposedLeft + currentRect.width / 2;
-                    const proposedCenterY = proposedTop + currentRect.height / 2;
+                            this.updateNode(nodeData.path, {
+                                properties: { style: { width: node.style.width, height: node.style.height, left: node.style.left, top: node.style.top } }
+                            });
+                            this.saveState();
+                            window.parent.postMessage({ type: 'V4_NODE_SELECTED', path: nodeData.path, nodeData: this.findNodeByPath(this.dataTree, nodeData.path) }, '*');
+                        };
 
-                    let snappedX = false; let snappedY = false;
-
-                    const parentContainer = node.parentElement;
-                    if (parentContainer) {
-                        const siblings = Array.from(parentContainer.children).filter(c => c !== node && c.hasAttribute('data-v4-path'));
-                        for (const sib of siblings) {
-                            const sibLeft = parseFloat(sib.style.left || 0);
-                            const sibTop = parseFloat(sib.style.top || 0);
-                            const sibWidth = sib.getBoundingClientRect().width;
-                            const sibHeight = sib.getBoundingClientRect().height;
-                            const sibRight = sibLeft + sibWidth;
-                            const sibBottom = sibTop + sibHeight;
-                            const sibCenterX = sibLeft + sibWidth / 2;
-                            const sibCenterY = sibTop + sibHeight / 2;
-
-                            const drawGuide = (x, y, w, h) => {
-                                const guide = document.createElement('div');
-                                guide.className = 'v4-smart-guide';
-                                guide.style.position = 'absolute';
-                                guide.style.backgroundColor = '#ff00ff';
-                                guide.style.zIndex = '99999';
-                                guide.style.left = x + 'px'; guide.style.top = y + 'px';
-                                guide.style.width = w + 'px'; guide.style.height = h + 'px';
-                                guide.style.pointerEvents = 'none';
-                                parentContainer.appendChild(guide);
-                            };
-
-                            if (!snappedX) {
-                                if (Math.abs(proposedLeft - sibLeft) < SNAP_DISTANCE) { dx = sibLeft - initialLeft; snappedX = true; drawGuide(sibLeft, Math.min(proposedTop, sibTop), 1, Math.max(proposedBottom, sibBottom) - Math.min(proposedTop, sibTop)); }
-                                else if (Math.abs(proposedCenterX - sibCenterX) < SNAP_DISTANCE) { dx = sibCenterX - currentRect.width / 2 - initialLeft; snappedX = true; drawGuide(sibCenterX, Math.min(proposedTop, sibTop), 1, Math.max(proposedBottom, sibBottom) - Math.min(proposedTop, sibTop)); }
-                                else if (Math.abs(proposedRight - sibRight) < SNAP_DISTANCE) { dx = sibRight - currentRect.width - initialLeft; snappedX = true; drawGuide(sibRight, Math.min(proposedTop, sibTop), 1, Math.max(proposedBottom, sibBottom) - Math.min(proposedTop, sibTop)); }
-                            }
-                            if (!snappedY) {
-                                if (Math.abs(proposedTop - sibTop) < SNAP_DISTANCE) { dy = sibTop - initialTop; snappedY = true; drawGuide(Math.min(proposedLeft, sibLeft), sibTop, Math.max(proposedRight, sibRight) - Math.min(proposedLeft, sibLeft), 1); }
-                                else if (Math.abs(proposedCenterY - sibCenterY) < SNAP_DISTANCE) { dy = sibCenterY - currentRect.height / 2 - initialTop; snappedY = true; drawGuide(Math.min(proposedLeft, sibLeft), sibCenterY, Math.max(proposedRight, sibRight) - Math.min(proposedLeft, sibLeft), 1); }
-                                else if (Math.abs(proposedBottom - sibBottom) < SNAP_DISTANCE) { dy = sibBottom - currentRect.height - initialTop; snappedY = true; drawGuide(Math.min(proposedLeft, sibLeft), sibBottom, Math.max(proposedRight, sibRight) - Math.min(proposedLeft, sibLeft), 1); }
-                            }
-                            if (snappedX && snappedY) break;
-                        }
-                    }
-                }
-
-                // Tracking Velocidad Inercial
-                const now = performance.now();
-                const dt = now - lastTime;
-                if (dt > 0) {
-                    velocityX = (e.clientX - lastX) / dt;
-                    velocityY = (e.clientY - lastY) / dt;
-                }
-                lastX = e.clientX;
-                lastY = e.clientY;
-                lastTime = now;
-
-                node.setAttribute('data-dyn-x', initialLeft + dx);
-                node.setAttribute('data-dyn-y', initialTop + dy);
-                node.style.setProperty('--dyn-drag', `translate3d(${initialLeft + dx}px, ${initialTop + dy}px, 0)`);
-            });
-
-            document.addEventListener('mouseup', (e) => {
-                if (!isDragging) return;
-                isDragging = false;
-                node.style.zIndex = '';
-                node.style.cursor = '';
-
-                if (window.parent !== window) {
-                    document.querySelectorAll('.v4-smart-guide').forEach(g => g.remove());
-
-                    // Parse the current offset from --dyn-drag
-                    const finalDrag = node.style.getPropertyValue('--dyn-drag');
-                    const dragMatch = finalDrag.match(/translate3d\(([-.\d]+)px,\s*([-.\d]+)px/);
-                    const dx = dragMatch ? parseFloat(dragMatch[1]) : 0;
-                    const dy = dragMatch ? parseFloat(dragMatch[2]) : 0;
-
-                    const currentLeft = parseFloat(node.style.left || 0);
-                    const currentTop = parseFloat(node.style.top || 0);
-
-                    node.style.left = (currentLeft + dx) + 'px';
-                    node.style.top = (currentTop + dy) + 'px';
-                    node.style.setProperty('--dyn-drag', 'translate3d(0,0,0)');
-
-                    this.updateNode(nodeData.path, {
-                        properties: { style: { left: node.style.left, top: node.style.top, position: 'absolute' } }
+                        document.addEventListener('mousemove', onMouseMove);
+                        document.addEventListener('mouseup', onMouseUp);
                     });
-                    this.saveState();
-                    window.parent.postMessage({ type: "V4_NODE_SELECTED", path: nodeData.path, nodeData: this.findNodeByPath(this.dataTree, nodeData.path) }, "*");
-                } else {
-                    // Production Mode: True Coasting / Spring Inertia Return to Origin
-                    const FRICTION = 0.92;
-                    const SPRING = 0.08;
+                    node.appendChild(h);
+                });
 
-                    let localVelX = velocityX;
-                    let localVelY = velocityY;
-                    let currentX = parseFloat(node.getAttribute('data-dyn-x')) || 0;
-                    let currentY = parseFloat(node.getAttribute('data-dyn-y')) || 0;
+                // Create Rotation Handle
+                const rLine = document.createElement('div'); rLine.className = 'v4-rotate-line'; node.appendChild(rLine);
+                const rHandle = document.createElement('div'); rHandle.className = 'v4-rotate-handle';
 
-                    const coastingLoop = () => {
-                        if (Math.abs(localVelX) < 0.01 && Math.abs(localVelY) < 0.01 && Math.abs(currentX) < 0.5 && Math.abs(currentY) < 0.5) {
-                            node.style.setProperty('--dyn-drag', 'translate3d(0px, 0px, 0)');
-                            node.setAttribute('data-dyn-x', '0');
-                            node.setAttribute('data-dyn-y', '0');
-                            return;
-                        }
+                rHandle.addEventListener('mousedown', (ev) => {
+                    ev.stopPropagation(); ev.preventDefault();
+                    const rect = node.getBoundingClientRect();
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
 
-                        localVelX *= FRICTION; localVelY *= FRICTION;
-                        const ax = (0 - currentX) * SPRING; const ay = (0 - currentY) * SPRING;
-                        localVelX += ax; localVelY += ay;
-                        currentX += localVelX; currentY += localVelY;
+                    // Parse existing rotation from --dyn-rotate or base transform
+                    const baseTransform = node.style.getPropertyValue('--base-transform') || '';
+                    let currentRot = 0;
+                    const rotMatch = baseTransform.match(/rotateZ\(([-.\d]+)deg\)/);
+                    if (rotMatch) currentRot = parseFloat(rotMatch[1]);
 
-                        node.style.setProperty('--dyn-drag', `translate3d(${currentX}px, ${currentY}px, 0)`);
-                        node.setAttribute('data-dyn-x', currentX); node.setAttribute('data-dyn-y', currentY);
-                        inertiaFrameId = requestAnimationFrame(coastingLoop);
+                    const startAngle = Math.atan2(ev.clientY - centerY, ev.clientX - centerX) * (180 / Math.PI);
+
+                    const onMouseMove = (moveEvent) => {
+                        const currentAngle = Math.atan2(moveEvent.clientY - centerY, moveEvent.clientX - centerX) * (180 / Math.PI);
+                        let deltaAngle = currentAngle - startAngle;
+                        let finalAngle = currentRot + deltaAngle + 90; // +90 because the handle is at the top
+
+                        // Snap to 15 degrees if holding Shift
+                        if (moveEvent.shiftKey) finalAngle = Math.round(finalAngle / 15) * 15;
+
+                        node.style.setProperty('--dyn-rotate', `rotateZ(${finalAngle}deg)`);
                     };
-                    coastingLoop();
-                }
+
+                    const onMouseUp = () => {
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+
+                        const finalRotStr = node.style.getPropertyValue('--dyn-rotate');
+                        if (finalRotStr) {
+                            let newBase = baseTransform.replace(/rotateZ\([-.\d]+deg\)/g, '').trim();
+                            newBase = `${newBase} ${finalRotStr}`.trim();
+                            node.style.setProperty('--base-transform', newBase);
+                            node.style.setProperty('--dyn-rotate', '');
+
+                            this.updateNode(nodeData.path, { properties: { style: { transform: newBase } } });
+                            this.saveState();
+                        }
+                    };
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+                node.appendChild(rHandle);
+
+                window.parent.postMessage({ type: 'V4_NODE_SELECTED', path: nodeData.path, nodeData: this.findNodeByPath(this.dataTree, nodeData.path) }, '*');
             });
 
-            // Allow receiving new items dropped from the Palette (HTML5 drop from outside iframe)
+            // 0.8 Allow receiving new items dropped from the Palette (HTML5 drop from outside iframe)
             node.addEventListener('dragover', (e) => {
                 e.preventDefault(); // Necessary to allow dropping
+                e.stopPropagation();
                 e.dataTransfer.dropEffect = 'copy';
             });
 
@@ -556,137 +490,65 @@ class V4Engine {
 
                 const newTag = e.dataTransfer.getData('v4/new-tag');
                 const newText = e.dataTransfer.getData('v4/new-text');
+                const newJsonStr = e.dataTransfer.getData('v4/new-json');
 
-                if (newTag) {
-                    // Calculate drop coordinates relative to the canvas pan and zoom
+                if (newTag || newJsonStr) {
                     const zoom = window.__v4CanvasZoom ? window.__v4CanvasZoom() : 1;
 
-                    const rootRect = this.rootElement.getBoundingClientRect();
-                    const nodeRect = node.getBoundingClientRect();
+                    // Spatial Drop Logic: Determine the effective container
+                    let dropTargetNode = node;
+                    let dropTargetPath = nodeData.path;
+                    let dropRect = node.getBoundingClientRect();
 
-                    const dropX = (e.clientX - nodeRect.left) / zoom;
-                    const dropY = (e.clientY - nodeRect.top) / zoom;
+                    if (!nodeData.children && node.parentElement !== this.rootElement) {
+                        dropTargetNode = node.parentElement;
+                        dropTargetPath = dropTargetNode.getAttribute('data-v4-path') || nodeData.path;
+                        dropRect = dropTargetNode.getBoundingClientRect();
+                    }
 
-                    const newNode = {
-                        id: 'node-' + Math.random().toString(36).substr(2, 9),
-                        tag: newTag,
-                        text: newText || '',
-                        properties: {
-                            style: {
-                                position: 'absolute',
-                                left: dropX + 'px',
-                                top: dropY + 'px',
-                                padding: '10px',
-                                border: '1px dashed #7f8c8d'
-                            }
+                    const dropX = (e.clientX - dropRect.left) / zoom;
+                    const dropY = (e.clientY - dropRect.top) / zoom;
+
+                    let newNode;
+                    if (newJsonStr) {
+                        try {
+                            newNode = JSON.parse(newJsonStr);
+                            newNode.id = 'node-' + Math.random().toString(36).substr(2, 9);
+                            if (!newNode.properties) newNode.properties = {};
+                            if (!newNode.properties.style) newNode.properties.style = {};
+                            newNode.properties.style.position = 'absolute';
+                            newNode.properties.style.left = dropX + 'px';
+                            newNode.properties.style.top = dropY + 'px';
+                        } catch (err) {
+                            console.error("Invalid JSON payload from palette", err);
+                            return;
                         }
-                    };
+                    } else {
+                        newNode = {
+                            id: 'node-' + Math.random().toString(36).substr(2, 9),
+                            tag: newTag,
+                            text: newText || '',
+                            properties: { style: { position: 'absolute', left: dropX + 'px', top: dropY + 'px', padding: '10px', border: '1px dashed #7f8c8d' } }
+                        };
+                    }
 
-                    // Insert into the tree as a child of whatever container we dropped onto
-                    this.addNodeToTreeAdvanced(nodeData.path, newNode, 'inside');
+                    this.addNodeToTreeAdvanced(dropTargetPath, newNode, 'inside');
                     this.saveState();
                 }
             });
 
-            // 0.5 Context Menu
-            node.addEventListener("contextmenu", (e) => {
-                e.preventDefault(); e.stopPropagation();
-                document.querySelectorAll(".v4-context-menu").forEach(m => m.remove());
 
-                const menu = document.createElement("div"); menu.className = "v4-context-menu";
-                menu.style.position = "fixed"; menu.style.background = "#252526"; menu.style.border = "1px solid #454545"; menu.style.boxShadow = "0 4px 6px rgba(0,0,0,0.5)"; menu.style.zIndex = "99999"; menu.style.borderRadius = "4px"; menu.style.padding = "4px 0"; menu.style.color = "#d4d4d4"; menu.style.fontFamily = "sans-serif"; menu.style.fontSize = "12px"; menu.style.minWidth = "120px";
-                menu.style.left = e.clientX + "px"; menu.style.top = e.clientY + "px";
-
-                const styleBtn = (btn) => {
-                    btn.style.padding = "6px 12px"; btn.style.cursor = "pointer";
-                    btn.addEventListener('mouseenter', () => { btn.style.background = "#007acc"; btn.style.color = "white"; });
-                    btn.addEventListener('mouseleave', () => { btn.style.background = "transparent"; btn.style.color = "#d4d4d4"; });
-                };
-
-                const currentZ = parseInt(nodeData.properties?.style?.zIndex || 1);
-
-                const bringFrontBtn = document.createElement("div"); bringFrontBtn.textContent = "↑ Bring Forward"; styleBtn(bringFrontBtn);
-                bringFrontBtn.onclick = () => { node.style.zIndex = currentZ + 1; this.updateNode(nodeData.path, { properties: { style: { zIndex: currentZ + 1 } } }); this.saveState(); menu.remove(); };
-
-                const sendBackBtn = document.createElement("div"); sendBackBtn.textContent = "↓ Send Backward"; styleBtn(sendBackBtn);
-                sendBackBtn.onclick = () => { node.style.zIndex = currentZ - 1; this.updateNode(nodeData.path, { properties: { style: { zIndex: currentZ - 1 } } }); this.saveState(); menu.remove(); };
-
-                const duplicateBtn = document.createElement("div"); duplicateBtn.textContent = "⧉ Duplicate"; styleBtn(duplicateBtn);
-                duplicateBtn.onclick = () => { this.handleBuilderAction({ action: "DUPLICATE", path: nodeData.path }); this.saveState(); menu.remove(); };
-
-                const deleteBtn = document.createElement("div"); deleteBtn.textContent = "× Delete"; styleBtn(deleteBtn); deleteBtn.style.color = "#ff6b6b";
-                deleteBtn.addEventListener('mouseleave', () => { deleteBtn.style.background = "transparent"; deleteBtn.style.color = "#ff6b6b"; });
-                deleteBtn.onclick = () => { this.handleBuilderAction({ action: "DELETE", path: nodeData.path }); this.saveState(); menu.remove(); };
-
-                menu.appendChild(bringFrontBtn); menu.appendChild(sendBackBtn); menu.appendChild(duplicateBtn); menu.appendChild(deleteBtn);
-                document.body.appendChild(menu);
-            });
-            // 0.7 Resize Handles Logic (Injected on selection click)
-            node.addEventListener('click', (e) => {
-                // Remove existing handles from everywhere
-                document.querySelectorAll(".v4-resize-handle").forEach(h => h.remove());
-
-                // Add handles to current node
-                const createHandle = (pos) => {
-                    const h = document.createElement("div");
-                    h.className = `v4-resize-handle v4-resize-${pos}`;
-                    h.style.position = "absolute";
-                    h.style.width = "8px";
-                    h.style.height = "8px";
-                    h.style.background = "white";
-                    h.style.border = "1px solid #007acc";
-                    h.style.zIndex = "10000";
-                    if (pos === "se") { h.style.bottom = "-4px"; h.style.right = "-4px"; h.style.cursor = "se-resize"; }
-                    if (pos === "e") { h.style.top = "50%"; h.style.right = "-4px"; h.style.transform = "translateY(-50%)"; h.style.cursor = "e-resize"; }
-                    if (pos === "s") { h.style.bottom = "-4px"; h.style.left = "50%"; h.style.transform = "translateX(-50%)"; h.style.cursor = "s-resize"; }
-
-
-                    h.addEventListener("mousedown", (ev) => {
-                        ev.stopPropagation();
-                        ev.preventDefault();
-
-                        const startX = ev.clientX;
-                        const startY = ev.clientY;
-                        const startWidth = node.getBoundingClientRect().width;
-                        const startHeight = node.getBoundingClientRect().height;
-
-                        const zoom = window.__v4CanvasZoom ? window.__v4CanvasZoom() : 1;
-                        const onMouseMove = (moveEvent) => {
-                            if (pos.includes("e")) node.style.width = (startWidth + (moveEvent.clientX - startX) / zoom) + "px";
-                            if (pos.includes("s")) node.style.height = (startHeight + (moveEvent.clientY - startY) / zoom) + "px";
-                        };
-
-                        const onMouseUp = () => {
-                            document.removeEventListener("mousemove", onMouseMove);
-                            document.removeEventListener("mouseup", onMouseUp);
-
-                            // Save to Engine
-                            const partialData = { properties: { style: {} } };
-                            if (pos.includes("e")) partialData.properties.style.width = node.style.width;
-                            if (pos.includes("s")) partialData.properties.style.height = node.style.height;
-
-                            this.updateNode(nodeData.path, partialData);
-                            this.saveState();
-
-                            // Notify Builder
-                            window.parent.postMessage({ type: "V4_NODE_SELECTED", path: nodeData.path, nodeData: this.findNodeByPath(this.dataTree, nodeData.path) }, "*");
-                        };
-
-                        document.addEventListener("mousemove", onMouseMove);
-                        document.addEventListener("mouseup", onMouseUp);
-                    });
-                    node.appendChild(h);
-                };
-
-                createHandle("se");
-                createHandle("e");
-                createHandle("s");
-            });
-
-            // 1. Text Editing Visual
+            // 1. Text Editing Visual & Group Isolation
 
             node.addEventListener('dblclick', (e) => {
                 e.stopPropagation();
+
+                // If it's a group (has children), enter isolation mode instead of text editing
+                if (nodeData.children && nodeData.children.length > 0) {
+                    this.enterIsolationMode(nodeData.path);
+                    return;
+                }
+
                 node.setAttribute('contenteditable', 'true');
                 node.focus();
                 node.style.outline = '2px dashed #007acc';
@@ -719,15 +581,13 @@ class V4Engine {
                 const config = nodeData.directives.mouseFollow;
                 const factor = config.factor || 0.1;
                 const lerp = config.lerp || 0.1;
-                let targetX = 0, targetY = 0, currentX = 0, currentY = 0;
-
-                window.addEventListener('mousemove', (e) => {
-                    targetX = (e.clientX - window.innerWidth / 2) * factor;
-                    targetY = (e.clientY - window.innerHeight / 2) * factor;
-                });
+                let currentX = 0, currentY = 0;
 
                 const updateFollow = () => {
-                    if (!document.body.contains(node)) return; // Cleanup
+                    if (!document.body.contains(node)) return; // Cleanup Memory
+                    const targetX = (this.globalMouseX - this.globalWindowWidth / 2) * factor;
+                    const targetY = (this.globalMouseY - this.globalWindowHeight / 2) * factor;
+
                     currentX += (targetX - currentX) * lerp;
                     currentY += (targetY - currentY) * lerp;
                     node.style.setProperty('--dyn-mouse-follow', `translate3d(${currentX}px, ${currentY}px, 0)`);
@@ -741,23 +601,49 @@ class V4Engine {
                 const config = nodeData.directives.lookAtMouse;
                 const maxRot = config.maxRotation || 15;
                 const lerp = config.lerp || 0.1;
-                let targetRX = 0, targetRY = 0, currentRX = 0, currentRY = 0;
-
-                window.addEventListener('mousemove', (e) => {
-                    const xPct = (e.clientX / window.innerWidth) - 0.5;
-                    const yPct = (e.clientY / window.innerHeight) - 0.5;
-                    targetRY = xPct * maxRot;
-                    targetRX = -yPct * maxRot;
-                });
+                let currentRX = 0, currentRY = 0;
 
                 const updateTilt = () => {
-                    if (!document.body.contains(node)) return;
+                    if (!document.body.contains(node)) return; // Cleanup Memory
+                    const xPct = (this.globalMouseX / this.globalWindowWidth) - 0.5;
+                    const yPct = (this.globalMouseY / this.globalWindowHeight) - 0.5;
+                    const targetRY = xPct * maxRot;
+                    const targetRX = -yPct * maxRot;
+
                     currentRX += (targetRX - currentRX) * lerp;
                     currentRY += (targetRY - currentRY) * lerp;
                     node.style.setProperty('--dyn-look-at', `rotateX(${currentRX}deg) rotateY(${currentRY}deg)`);
                     requestAnimationFrame(updateTilt);
                 };
                 requestAnimationFrame(updateTilt);
+            }
+
+
+            // Interactive Scroll Parallax (Timeline Modifiers)
+            if (nodeData.directives.scrollAnimate) {
+                const config = nodeData.directives.scrollAnimate;
+                const speedY = config.speedY || 0;
+                const scaleSpeed = config.scale || 0;
+
+                // Initialize safely
+                if (!node.style.getPropertyValue('--dyn-scroll')) {
+                    node.style.setProperty('--dyn-scroll', 'translate3d(0, 0px, 0) scale(1)');
+                }
+
+                let currentScroll = this.globalScrollY || 0;
+                const lerp = 0.1;
+
+                const updateScroll = () => {
+                    if (!document.body.contains(node)) return; // Cleanup Memory
+                    currentScroll += (this.globalScrollY - currentScroll) * lerp;
+
+                    const dy = currentScroll * speedY;
+                    const ds = 1 + (currentScroll * scaleSpeed);
+
+                    node.style.setProperty('--dyn-scroll', `translate3d(0, ${dy}px, 0) scale(${ds})`);
+                    requestAnimationFrame(updateScroll);
+                };
+                requestAnimationFrame(updateScroll);
             }
 
             // Auto Animate (Continuous looping animation)
@@ -804,11 +690,18 @@ class V4Engine {
             }
         }
 
-        // Manejo de Formularios (Reactividad Inversa)
-        if (nodeData.directives && nodeData.directives.sync && (tag === 'input' || tag === 'textarea')) {
+        // Manejo de Formularios & Magnetic Data Binding (Reactividad Inversa)
+        if (nodeData.directives && (nodeData.directives.sync || nodeData.directives.syncTarget) && (tag === 'input' || tag === 'textarea')) {
             node.value = nodeData.text || '';
             node.addEventListener('input', (e) => {
-                this.updateNode(nodeData.path, { text: e.target.value });
+                const newVal = e.target.value;
+                this.updateNode(nodeData.path, { text: newVal });
+
+                if (nodeData.directives.syncTarget) {
+                    // Actualizar el nodo destino mágicamente
+                    this.updateNode(nodeData.directives.syncTarget, { text: newVal });
+                }
+
                 this.saveState();
             });
         }
@@ -850,6 +743,13 @@ class V4Engine {
                     }
                 });
 
+                // If it's already loaded
+                if (node.contentDocument && node.contentDocument.readyState === 'complete') {
+                    if (node.contentWindow) {
+                        node.contentWindow.postMessage({ type: 'V4_GET_TREE' }, '*');
+                    }
+                }
+
                 window.addEventListener('message', (event) => {
                     const data = event.data;
                     if (!data) return;
@@ -874,27 +774,72 @@ class V4Engine {
                         updateInput('prop-tag', data.nodeData.tag || 'div');
                         updateInput('prop-text', data.nodeData.text || '');
 
+                        // Advanced Materials
                         if (data.nodeData.properties && data.nodeData.properties.style) {
                             const styles = data.nodeData.properties.style;
                             updateInput('style-backgroundColor', styles.backgroundColor || '#ffffff');
                             updateInput('style-width', styles.width);
                             updateInput('style-height', styles.height);
+                            updateInput('style-backdropFilter', styles.backdropFilter || styles['-webkit-backdrop-filter']);
+                            updateInput('style-borderRadius', styles.borderRadius);
+                            updateInput('style-boxShadow', styles.boxShadow);
+                        }
+
+                        // Parse Magic Directives
+                        const d = data.nodeData.directives || {};
+                        updateInput('dir-syncTarget', d.syncTarget || '');
+                        updateInput('dir-autoAnimate-amp', d.autoAnimate?.floatAmplitude || '');
+                        updateInput('dir-autoAnimate-freq', d.autoAnimate?.floatFrequency || '');
+                        updateInput('dir-lookAtMouse-rot', d.lookAtMouse?.maxRotation || '');
+                        updateInput('dir-mouseFollow-factor', d.mouseFollow?.factor || '');
+
+                        // Parse 200% Canva Killer Directives
+                        updateInput('dir-scrollAnimate-speedY', d.scrollAnimate?.speedY || '');
+                        updateInput('dir-scrollAnimate-scale', d.scrollAnimate?.scale || '');
+
+                        updateInput('dir-instances-count', d.instances?.count || '');
+                        if (d.instances?.spread) {
+                            updateInput('dir-instances-spread', `${d.instances.spread.x || 0}, ${d.instances.spread.y || 0}, ${d.instances.spread.z || 0}`);
+                        } else {
+                            updateInput('dir-instances-spread', '');
                         }
 
                         // Setup reactive patches
                         this.currentSelectedPath = data.path;
                     }
+
                 });
 
                 // Reactive Inputs
-                const bindInput = (id, key, isStyle) => {
+                const bindInput = (id, key, isStyle, directivePath) => {
                     const el = document.getElementById(id);
                     if (el) {
                         el.addEventListener('input', (e) => {
                             if (!this.currentSelectedPath) return;
-                            const patch = isStyle ? { properties: { style: {} } } : {};
-                            if (isStyle) patch.properties.style[key] = e.target.value;
-                            else patch[key] = e.target.value;
+
+                            let patch = {};
+                            if (isStyle) {
+                                patch = { properties: { style: { [key]: e.target.value } } };
+                            } else if (directivePath) {
+                                // e.g. directivePath = ['autoAnimate', 'floatAmplitude']
+                                const val = parseFloat(e.target.value);
+                                if (isNaN(val)) return; // Don't send empty strings to math
+
+                                patch = { directives: {} };
+                                patch.directives[directivePath[0]] = {};
+                                patch.directives[directivePath[0]][directivePath[1]] = val;
+
+                                // Default dependencies if enabling for first time
+                                if (directivePath[0] === 'autoAnimate') {
+                                    if (directivePath[1] === 'floatAmplitude') patch.directives.autoAnimate.floatFrequency = 0.002;
+                                    if (directivePath[1] === 'floatFrequency') patch.directives.autoAnimate.floatAmplitude = 15;
+                                }
+                                if (directivePath[0] === 'lookAtMouse') patch.directives.lookAtMouse.lerp = 0.1;
+                                if (directivePath[0] === 'mouseFollow') patch.directives.mouseFollow.lerp = 0.1;
+                            } else {
+                                patch = { [key]: e.target.value };
+                            }
+
                             node.contentWindow.postMessage({ type: 'V4_BUILDER_PATCH', path: this.currentSelectedPath, patch: patch }, '*');
                             document.getElementById('save-status').textContent = 'Unsaved changes...';
                         });
@@ -908,7 +853,40 @@ class V4Engine {
                     bindInput('style-backgroundColor', 'backgroundColor', true);
                     bindInput('style-width', 'width', true);
                     bindInput('style-height', 'height', true);
+                    bindInput('style-backdropFilter', 'backdropFilter', true);
+                    bindInput('style-borderRadius', 'borderRadius', true);
+                    bindInput('style-boxShadow', 'boxShadow', true);
+                    bindInput('dir-syncTarget', '', false, ['syncTarget']);
+
+                    bindInput('dir-autoAnimate-amp', '', false, ['autoAnimate', 'floatAmplitude']);
+                    bindInput('dir-autoAnimate-freq', '', false, ['autoAnimate', 'floatFrequency']);
+                    bindInput('dir-lookAtMouse-rot', '', false, ['lookAtMouse', 'maxRotation']);
+                    bindInput('dir-mouseFollow-factor', '', false, ['mouseFollow', 'factor']);
+
+                    bindInput('dir-scrollAnimate-speedY', '', false, ['scrollAnimate', 'speedY']);
+                    bindInput('dir-scrollAnimate-scale', '', false, ['scrollAnimate', 'scale']);
+                    bindInput('dir-instances-count', '', false, ['instances', 'count']);
+
+                    const instancesSpreadEl = document.getElementById('dir-instances-spread');
+                    if (instancesSpreadEl) {
+                        instancesSpreadEl.addEventListener('input', (e) => {
+                            if (!this.currentSelectedPath) return;
+                            const vals = e.target.value.split(',').map(v => parseFloat(v.trim()));
+                            const spread = { x: vals[0] || 0, y: vals[1] || 0, z: vals[2] || 0 };
+                            node.contentWindow.postMessage({ type: 'V4_BUILDER_PATCH', path: this.currentSelectedPath, patch: { directives: { instances: { spread: spread } } } }, '*');
+                        });
+                    }
+
+                    // Global Mesh Theme Setup
+                    const meshSelect = document.getElementById('global-mesh-theme');
+                    if (meshSelect) {
+                        meshSelect.addEventListener('change', (e) => {
+                            node.contentWindow.postMessage({ type: 'V4_BUILDER_ACTION', action: 'GLOBAL_NETWORK', payload: e.target.value }, '*');
+                            document.getElementById('save-status').textContent = 'Theme applied...';
+                        });
+                    }
                 }, 500);
+
             }
         }
 
@@ -973,6 +951,39 @@ class V4Engine {
             for (const key in properties.attributes) {
                 node.setAttribute(key, properties.attributes[key]);
             }
+        }
+    }
+
+
+    enterIsolationMode(path) {
+        this.isolatedPath = path;
+
+        // Remove selection from everyone
+        document.querySelectorAll('.v4-selected').forEach(el => el.classList.remove('v4-selected'));
+        document.querySelectorAll('.v4-resize-handle, .v4-rotate-handle, .v4-rotate-line').forEach(h => h.remove());
+
+        // Visual indicator of isolation mode
+        document.querySelectorAll('.v4-isolated').forEach(el => el.classList.remove('v4-isolated'));
+        const node = this.nodeRegistry.get(path);
+        if (node) {
+            node.classList.add('v4-isolated');
+            node.style.outline = '2px dashed #4ec9b0';
+            node.style.outlineOffset = '4px';
+        }
+
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'V4_BUILDER_ACTION', action: 'ENTER_ISOLATION', path: path }, '*');
+        }
+    }
+
+    exitIsolationMode() {
+        this.isolatedPath = null;
+        document.querySelectorAll('.v4-isolated').forEach(el => {
+            el.classList.remove('v4-isolated');
+            el.style.outline = '';
+        });
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'V4_BUILDER_ACTION', action: 'EXIT_ISOLATION' }, '*');
         }
     }
 
@@ -1105,6 +1116,39 @@ class V4Engine {
             }
         }
         return null;
+    }
+
+
+    enterIsolationMode(path) {
+        this.isolatedPath = path;
+
+        // Remove selection from everyone
+        document.querySelectorAll('.v4-selected').forEach(el => el.classList.remove('v4-selected'));
+        document.querySelectorAll('.v4-resize-handle, .v4-rotate-handle, .v4-rotate-line').forEach(h => h.remove());
+
+        // Visual indicator of isolation mode
+        document.querySelectorAll('.v4-isolated').forEach(el => el.classList.remove('v4-isolated'));
+        const node = this.nodeRegistry.get(path);
+        if (node) {
+            node.classList.add('v4-isolated');
+            node.style.outline = '2px dashed #4ec9b0';
+            node.style.outlineOffset = '4px';
+        }
+
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'V4_BUILDER_ACTION', action: 'ENTER_ISOLATION', path: path }, '*');
+        }
+    }
+
+    exitIsolationMode() {
+        this.isolatedPath = null;
+        document.querySelectorAll('.v4-isolated').forEach(el => {
+            el.classList.remove('v4-isolated');
+            el.style.outline = '';
+        });
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'V4_BUILDER_ACTION', action: 'EXIT_ISOLATION' }, '*');
+        }
     }
 
     unmount(node) {
@@ -1260,11 +1304,35 @@ class V4Engine {
     // La Capa del Creador (The Builder Bridge)
     setupBuilderBridge() {
 
+
+        if (!document.getElementById('v4-canvas-styles')) {
+            const style = document.createElement('style');
+            style.id = 'v4-canvas-styles';
+            style.innerHTML = `
+                .v4-selected { outline: 2px solid #007acc; outline-offset: 0px; position: relative; cursor: move; }
+                .v4-selected::after { content: attr(data-v4-tag); position: absolute; top: -20px; left: -2px; background: #007acc; color: white; padding: 2px 6px; font-size: 10px; border-radius: 2px 2px 0 0; text-transform: uppercase; z-index: 9999; pointer-events: none; }
+                .v4-resize-handle { position: absolute; width: 10px; height: 10px; background: white; border: 1px solid #007acc; z-index: 10000; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+                .v4-resize-nw { top: -5px; left: -5px; cursor: nwse-resize; }
+                .v4-resize-ne { top: -5px; right: -5px; cursor: nesw-resize; }
+                .v4-resize-se { bottom: -5px; right: -5px; cursor: nwse-resize; }
+                .v4-resize-sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
+                .v4-rotate-handle { position: absolute; width: 14px; height: 14px; background: transparent; border: 2px solid #ff00ff; border-radius: 50%; z-index: 10001; top: -25px; left: 50%; transform: translateX(-50%); cursor: grab; }
+                .v4-rotate-line { position: absolute; width: 2px; height: 15px; background: #ff00ff; top: -10px; left: 50%; transform: translateX(-50%); z-index: 10000; }
+                .v4-smart-guide { position: absolute; background-color: #ff00ff; z-index: 99999; pointer-events: none; }
+            `;
+            document.head.appendChild(style);
+        }
         // Global Undo/Redo listeners
 
         // Global Click to close context menus
         window.addEventListener("click", () => {
             document.querySelectorAll(".v4-context-menu").forEach(m => m.remove());
+        });
+
+        document.body.addEventListener('dblclick', (e) => {
+            if (e.target === document.body || e.target === this.rootElement) {
+                this.exitIsolationMode();
+            }
         });
 
         window.addEventListener('keydown', (e) => {
@@ -1308,6 +1376,31 @@ class V4Engine {
         const targetNode = this.findNodeByPath(this.dataTree, path);
         const parentNode = this.findParentNodeByPath(this.dataTree, path);
 
+        if (action === 'GLOBAL_NETWORK') {
+            const themes = {
+                'solar': { density: 40, lineColor: '#f59e0b', glowColor: '#fbbf24', radius: 150, interaction: 'repel' },
+                'ocean': { density: 25, lineColor: '#0ea5e9', glowColor: '#7dd3fc', radius: 220, interaction: 'wave' },
+                'forest': { density: 55, lineColor: '#10b981', glowColor: '#6ee7b7', radius: 100, interaction: 'glow' },
+                'sunset': { density: 30, lineColor: '#f43f5e', glowColor: '#fda4af', radius: 250, interaction: 'attract' },
+                'purple': { density: 45, lineColor: '#8b5cf6', glowColor: '#ddd6fe', radius: 180, interaction: 'repel' },
+                'minimal': { density: 80, lineColor: '#525252', glowColor: '#a3a3a3', radius: 80, interaction: 'glow' },
+                'none': { type: 'none' }
+            };
+
+            if (!this.dataTree.meta) this.dataTree.meta = {};
+            const selectedTheme = themes[payload] || themes['none'];
+            if (payload !== 'none') selectedTheme.type = 'mesh';
+
+            this.dataTree.meta.network = selectedTheme;
+
+            // Clean old canvas and re-init
+            const oldCanvas = document.getElementById('v4-network-canvas');
+            if (oldCanvas) oldCanvas.remove();
+
+            this.initNetwork(this.dataTree.meta.network);
+            this.saveState();
+            return;
+        }
         if (action === 'ADD') {
             if (targetNode) {
                 if (!targetNode.children) targetNode.children = [];

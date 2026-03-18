@@ -109,7 +109,8 @@
                   "attributes": {
                     "draggable": "true",
                     "data-tag": "div",
-                    "data-text": ""
+                    "data-text": "",
+                    "data-v4-container": "true"
                   }
                 },
                 "directives": {
@@ -206,6 +207,32 @@
                     "draggable": "true",
                     "data-tag": "img",
                     "data-text": ""
+                  }
+                },
+                "directives": {
+                  "paletteItem": true
+                }
+              },
+              {
+                "tag": "div",
+                "text": "Hero Section",
+                "properties": {
+                  "style": {
+                    "background": "linear-gradient(135deg, #0ea5e9, #8b5cf6)",
+                    "padding": "8px",
+                    "borderRadius": "4px",
+                    "fontSize": "12px",
+                    "cursor": "grab",
+                    "border": "1px solid #555",
+                    "width": "calc(100% - 22px)",
+                    "textAlign": "center",
+                    "color": "white",
+                    "fontWeight": "bold"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-tag": "div",
+                    "data-json": "{\"tag\": \"div\", \"properties\": {\"style\": {\"display\": \"flex\", \"flexDirection\": \"column\", \"alignItems\": \"center\", \"justifyContent\": \"center\", \"padding\": \"60px\", \"backgroundColor\": \"rgba(30, 30, 46, 0.8)\", \"borderRadius\": \"32px\", \"border\": \"1px solid rgba(255,255,255,0.1)\", \"boxShadow\": \"0 20px 40px rgba(0,0,0,0.5)\", \"backdropFilter\": \"blur(20px)\"}}, \"directives\": {\"lookAtMouse\": {\"maxRotation\": 10, \"lerp\": 0.1}}, \"children\": [{\"tag\": \"h1\", \"text\": \"Tu Nuevo Mundo\", \"properties\": {\"style\": {\"fontSize\": \"4rem\", \"margin\": \"0 0 20px 0\", \"color\": \"white\"}}}, {\"tag\": \"p\", \"text\": \"Dise\\u00f1o infinito guiado por datos.\", \"properties\": {\"style\": {\"fontSize\": \"1.5rem\", \"color\": \"#94a3b8\", \"margin\": \"0 0 40px 0\"}}}, {\"tag\": \"button\", \"text\": \"Explorar V4\", \"properties\": {\"style\": {\"padding\": \"15px 30px\", \"borderRadius\": \"50px\", \"border\": \"none\", \"backgroundColor\": \"#0ea5e9\", \"color\": \"white\", \"fontSize\": \"1.2rem\", \"fontWeight\": \"bold\", \"cursor\": \"pointer\"}}}]}"
                   }
                 },
                 "directives": {
@@ -568,6 +595,74 @@
                     "children": [
                       {
                         "tag": "h3",
+                        "text": "Magnetic Data Binding",
+                        "properties": {
+                          "style": {
+                            "margin": "0 0 10px 0",
+                            "fontSize": "13px",
+                            "color": "#ff8c00",
+                            "textTransform": "uppercase"
+                          }
+                        }
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "label",
+                            "text": "Sync Target",
+                            "properties": {
+                              "style": {
+                                "width": "100px",
+                                "fontSize": "12px",
+                                "color": "#ccc",
+                                "title": "Node Path to sync text to"
+                              }
+                            }
+                          },
+                          {
+                            "tag": "input",
+                            "id": "dir-syncTarget",
+                            "properties": {
+                              "attributes": {
+                                "type": "text",
+                                "placeholder": "e.g. app.hero.title"
+                              },
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "div",
+                    "properties": {
+                      "style": {
+                        "marginBottom": "20px",
+                        "borderBottom": "1px solid #3c3c3c",
+                        "paddingBottom": "15px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "tag": "h3",
                         "text": "Appearance",
                         "properties": {
                           "style": {
@@ -705,6 +800,700 @@
                                 "outline": "none"
                               }
                             }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "div",
+                    "properties": {
+                      "style": {
+                        "marginBottom": "20px",
+                        "borderBottom": "1px solid #3c3c3c",
+                        "paddingBottom": "15px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "tag": "h3",
+                        "text": "Magic Behaviors",
+                        "properties": {
+                          "style": {
+                            "margin": "0 0 10px 0",
+                            "fontSize": "13px",
+                            "color": "#c586c0",
+                            "textTransform": "uppercase"
+                          }
+                        }
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "label",
+                            "text": "Auto Float Amp",
+                            "properties": {
+                              "style": {
+                                "width": "100px",
+                                "fontSize": "12px",
+                                "color": "#ccc"
+                              }
+                            }
+                          },
+                          {
+                            "tag": "input",
+                            "id": "dir-autoAnimate-amp",
+                            "properties": {
+                              "attributes": {
+                                "type": "number",
+                                "placeholder": "e.g. 15",
+                                "min": "0"
+                              },
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "label",
+                            "text": "Auto Float Freq",
+                            "properties": {
+                              "style": {
+                                "width": "100px",
+                                "fontSize": "12px",
+                                "color": "#ccc"
+                              }
+                            }
+                          },
+                          {
+                            "tag": "input",
+                            "id": "dir-autoAnimate-freq",
+                            "properties": {
+                              "attributes": {
+                                "type": "number",
+                                "step": "0.001",
+                                "placeholder": "e.g. 0.002"
+                              },
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "label",
+                            "text": "3D Tilt Mouse",
+                            "properties": {
+                              "style": {
+                                "width": "100px",
+                                "fontSize": "12px",
+                                "color": "#ccc",
+                                "title": "Max Rotation (Degrees)"
+                              }
+                            }
+                          },
+                          {
+                            "tag": "input",
+                            "id": "dir-lookAtMouse-rot",
+                            "properties": {
+                              "attributes": {
+                                "type": "number",
+                                "placeholder": "e.g. 15 (Max Deg)",
+                                "min": "0"
+                              },
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "label",
+                            "text": "Follow Mouse",
+                            "properties": {
+                              "style": {
+                                "width": "100px",
+                                "fontSize": "12px",
+                                "color": "#ccc",
+                                "title": "Factor (e.g. 0.05)"
+                              }
+                            }
+                          },
+                          {
+                            "tag": "input",
+                            "id": "dir-mouseFollow-factor",
+                            "properties": {
+                              "attributes": {
+                                "type": "number",
+                                "step": "0.01",
+                                "placeholder": "e.g. 0.05 (Factor)"
+                              },
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "div",
+                    "properties": {
+                      "style": {
+                        "marginBottom": "20px",
+                        "borderBottom": "1px solid #3c3c3c",
+                        "paddingBottom": "15px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "tag": "h3",
+                        "text": "Materials (Glass & Glow)",
+                        "properties": {
+                          "style": {
+                            "margin": "0 0 10px 0",
+                            "fontSize": "13px",
+                            "color": "#dcdcaa",
+                            "textTransform": "uppercase"
+                          }
+                        }
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "label",
+                            "text": "Glass Blur (px)",
+                            "properties": {
+                              "style": {
+                                "width": "100px",
+                                "fontSize": "12px",
+                                "color": "#ccc"
+                              }
+                            }
+                          },
+                          {
+                            "tag": "input",
+                            "id": "style-backdropFilter",
+                            "properties": {
+                              "attributes": {
+                                "type": "text",
+                                "placeholder": "e.g. blur(20px)"
+                              },
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "label",
+                            "text": "Border Radius",
+                            "properties": {
+                              "style": {
+                                "width": "100px",
+                                "fontSize": "12px",
+                                "color": "#ccc"
+                              }
+                            }
+                          },
+                          {
+                            "tag": "input",
+                            "id": "style-borderRadius",
+                            "properties": {
+                              "attributes": {
+                                "type": "text",
+                                "placeholder": "e.g. 32px"
+                              },
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "label",
+                            "text": "Box Shadow",
+                            "properties": {
+                              "style": {
+                                "width": "100px",
+                                "fontSize": "12px",
+                                "color": "#ccc"
+                              }
+                            }
+                          },
+                          {
+                            "tag": "input",
+                            "id": "style-boxShadow",
+                            "properties": {
+                              "attributes": {
+                                "type": "text",
+                                "placeholder": "0 25px 50px rgba(0,0,0,0.5)"
+                              },
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "div",
+                    "properties": {
+                      "style": {
+                        "marginBottom": "20px",
+                        "borderBottom": "1px solid #3c3c3c",
+                        "paddingBottom": "15px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "tag": "h3",
+                        "text": "3D Procedural Instances",
+                        "properties": {
+                          "style": {
+                            "margin": "0 0 10px 0",
+                            "fontSize": "13px",
+                            "color": "#4ec9b0",
+                            "textTransform": "uppercase"
+                          }
+                        }
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "label",
+                            "text": "Count (Clones)",
+                            "properties": {
+                              "style": {
+                                "width": "100px",
+                                "fontSize": "12px",
+                                "color": "#ccc"
+                              }
+                            }
+                          },
+                          {
+                            "tag": "input",
+                            "id": "dir-instances-count",
+                            "properties": {
+                              "attributes": {
+                                "type": "number",
+                                "placeholder": "e.g. 50"
+                              },
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "label",
+                            "text": "Spread X/Y/Z",
+                            "properties": {
+                              "style": {
+                                "width": "100px",
+                                "fontSize": "12px",
+                                "color": "#ccc"
+                              }
+                            }
+                          },
+                          {
+                            "tag": "input",
+                            "id": "dir-instances-spread",
+                            "properties": {
+                              "attributes": {
+                                "type": "text",
+                                "placeholder": "2000, 1500, 500"
+                              },
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "div",
+                    "properties": {
+                      "style": {
+                        "marginBottom": "20px",
+                        "borderBottom": "1px solid #3c3c3c",
+                        "paddingBottom": "15px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "tag": "h3",
+                        "text": "Scroll Timeline Parallax",
+                        "properties": {
+                          "style": {
+                            "margin": "0 0 10px 0",
+                            "fontSize": "13px",
+                            "color": "#ce9178",
+                            "textTransform": "uppercase"
+                          }
+                        }
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "label",
+                            "text": "Parallax Y Speed",
+                            "properties": {
+                              "style": {
+                                "width": "100px",
+                                "fontSize": "12px",
+                                "color": "#ccc"
+                              }
+                            }
+                          },
+                          {
+                            "tag": "input",
+                            "id": "dir-scrollAnimate-speedY",
+                            "properties": {
+                              "attributes": {
+                                "type": "number",
+                                "step": "0.1",
+                                "placeholder": "e.g. -0.5 (Up)"
+                              },
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "label",
+                            "text": "Scale Speed",
+                            "properties": {
+                              "style": {
+                                "width": "100px",
+                                "fontSize": "12px",
+                                "color": "#ccc"
+                              }
+                            }
+                          },
+                          {
+                            "tag": "input",
+                            "id": "dir-scrollAnimate-scale",
+                            "properties": {
+                              "attributes": {
+                                "type": "number",
+                                "step": "0.01",
+                                "placeholder": "e.g. 0.01 (Grow)"
+                              },
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "tag": "div",
+                    "properties": {
+                      "style": {
+                        "marginBottom": "20px",
+                        "borderBottom": "1px solid #3c3c3c",
+                        "paddingBottom": "15px"
+                      }
+                    },
+                    "children": [
+                      {
+                        "tag": "h3",
+                        "text": "Global Mesh Theme",
+                        "properties": {
+                          "style": {
+                            "margin": "0 0 10px 0",
+                            "fontSize": "13px",
+                            "color": "#4ec9b0",
+                            "textTransform": "uppercase"
+                          }
+                        }
+                      },
+                      {
+                        "tag": "div",
+                        "properties": {
+                          "style": {
+                            "display": "flex",
+                            "marginBottom": "8px",
+                            "alignItems": "center"
+                          }
+                        },
+                        "children": [
+                          {
+                            "tag": "select",
+                            "id": "global-mesh-theme",
+                            "properties": {
+                              "style": {
+                                "flex": "1",
+                                "background": "#3c3c3c",
+                                "border": "1px solid #555",
+                                "color": "white",
+                                "padding": "4px 8px",
+                                "borderRadius": "3px",
+                                "fontSize": "12px",
+                                "outline": "none"
+                              }
+                            },
+                            "children": [
+                              {
+                                "tag": "option",
+                                "text": "None",
+                                "properties": {
+                                  "attributes": {
+                                    "value": "none"
+                                  }
+                                }
+                              },
+                              {
+                                "tag": "option",
+                                "text": "Solar (Energetic)",
+                                "properties": {
+                                  "attributes": {
+                                    "value": "solar"
+                                  }
+                                }
+                              },
+                              {
+                                "tag": "option",
+                                "text": "Ocean (Fluid)",
+                                "properties": {
+                                  "attributes": {
+                                    "value": "ocean"
+                                  }
+                                }
+                              },
+                              {
+                                "tag": "option",
+                                "text": "Forest (Organic)",
+                                "properties": {
+                                  "attributes": {
+                                    "value": "forest"
+                                  }
+                                }
+                              },
+                              {
+                                "tag": "option",
+                                "text": "Sunset (Dramatic)",
+                                "properties": {
+                                  "attributes": {
+                                    "value": "sunset"
+                                  }
+                                }
+                              },
+                              {
+                                "tag": "option",
+                                "text": "Purple (Premium)",
+                                "properties": {
+                                  "attributes": {
+                                    "value": "purple"
+                                  }
+                                }
+                              },
+                              {
+                                "tag": "option",
+                                "text": "Minimal (Clean)",
+                                "properties": {
+                                  "attributes": {
+                                    "value": "minimal"
+                                  }
+                                }
+                              }
+                            ]
                           }
                         ]
                       }
