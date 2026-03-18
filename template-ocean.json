@@ -1,0 +1,238 @@
+{
+  "meta": {
+    "title": "Showcase - Template Océano V4",
+    "description": "Espacioso y fluido. Construido 100% con V4 JSON.",
+    "network": {
+      "type": "mesh",
+      "density": 25,
+      "lineColor": "#0ea5e9",
+      "glowColor": "#7dd3fc",
+      "radius": 220,
+      "interaction": "wave"
+    }
+  },
+  "root": {
+    "tag": "div",
+    "path": "app",
+    "properties": {
+      "style": {
+        "backgroundColor": "transparent",
+        "color": "#e2e8f0",
+        "fontFamily": "system-ui, -apple-system, sans-serif",
+        "minHeight": "100vh",
+        "overflowX": "hidden",
+        "perspective": "1000px"
+      }
+    },
+    "children": [
+      {
+        "tag": "nav",
+        "path": "app.navbar",
+        "properties": {
+          "style": {
+            "position": "fixed",
+            "top": "0",
+            "left": "0",
+            "width": "100%",
+            "padding": "20px 40px",
+            "display": "flex",
+            "justifyContent": "space-between",
+            "alignItems": "center",
+            "backdropFilter": "blur(30px)",
+            "backgroundColor": "rgba(30, 30, 46, 0.6)",
+            "zIndex": "100",
+            "boxSizing": "border-box",
+            "borderBottom": "1px solid rgba(255,255,255,0.05)"
+          }
+        },
+        "children": [
+          {
+            "tag": "div",
+            "properties": { "style": { "display": "flex", "alignItems": "center", "gap": "10px" } },
+            "children": [
+              { "tag": "span", "text": "🌊", "properties": { "style": { "fontSize": "24px" } } },
+              { "tag": "span", "text": "Océano V4", "properties": { "style": { "fontWeight": "bold", "fontSize": "20px", "letterSpacing": "1px", "color": "#ffffff" } } }
+            ]
+          },
+          {
+            "tag": "button",
+            "text": "Comenzar Viaje",
+            "properties": {
+              "style": {
+                "padding": "10px 24px",
+                "borderRadius": "24px",
+                "border": "none",
+                "backgroundColor": "#0ea5e9",
+                "color": "white",
+                "fontWeight": "bold",
+                "cursor": "pointer",
+                "transition": "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease",
+                "boxShadow": "0 10px 25px rgba(14, 165, 233, 0.4)"
+              }
+            },
+            "directives": {
+              "mouseFollow": { "factor": 0.05, "lerp": 0.1 }
+            }
+          }
+        ]
+      },
+      {
+        "tag": "div",
+        "path": "app.hero",
+        "properties": {
+          "style": {
+            "display": "flex",
+            "flexDirection": "column",
+            "alignItems": "center",
+            "justifyContent": "center",
+            "minHeight": "100vh",
+            "textAlign": "center",
+            "padding": "0 20px",
+            "position": "relative",
+            "zIndex": "10"
+          }
+        },
+        "children": [
+          {
+            "tag": "h1",
+            "text": "Profundidad Infinita.",
+            "properties": {
+              "style": {
+                "fontSize": "5rem",
+                "fontWeight": "900",
+                "margin": "0 0 20px 0",
+                "background": "linear-gradient(to right, #ffffff, #38bdf8)",
+                "WebkitBackgroundClip": "text",
+                "WebkitTextFillColor": "transparent",
+                "filter": "drop-shadow(0 0 20px rgba(56, 189, 248, 0.3))"
+              }
+            },
+            "directives": {
+              "lookAtMouse": { "maxRotation": 20, "lerp": 0.08 }
+            }
+          },
+          {
+            "tag": "p",
+            "text": "Un ecosistema de diseño fluido y orgánico dictado por datos puros.",
+            "properties": {
+              "style": {
+                "fontSize": "1.5rem",
+                "color": "#94a3b8",
+                "maxWidth": "600px",
+                "margin": "0 0 50px 0",
+                "lineHeight": "1.6"
+              }
+            },
+            "directives": {
+              "autoAnimate": { "floatAmplitude": 15, "floatFrequency": 0.002 }
+            }
+          },
+          {
+            "tag": "div",
+            "path": "app.hero.cards",
+            "properties": {
+              "style": {
+                "display": "flex",
+                "gap": "30px",
+                "flexWrap": "wrap",
+                "justifyContent": "center",
+                "marginTop": "40px"
+              }
+            },
+            "children": [
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "width": "300px",
+                    "padding": "40px",
+                    "backgroundColor": "rgba(255, 255, 255, 0.05)",
+                    "borderRadius": "32px",
+                    "backdropFilter": "blur(20px)",
+                    "border": "1px solid rgba(255, 255, 255, 0.1)",
+                    "boxShadow": "0 25px 50px rgba(0,0,0,0.5)",
+                    "transition": "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease",
+                    "cursor": "pointer"
+                  }
+                },
+                "children": [
+                  { "tag": "div", "text": "🌊", "properties": { "style": { "fontSize": "40px", "marginBottom": "20px" } } },
+                  { "tag": "h3", "text": "Flujo Continuo", "properties": { "style": { "fontSize": "1.5rem", "color": "white", "margin": "0 0 15px 0" } } },
+                  { "tag": "p", "text": "Sin recargas de página. Reconciliación profunda a 60 FPS inyectada mediante JSON.", "properties": { "style": { "color": "#cbd5e1", "lineHeight": "1.5", "margin": "0" } } }
+                ],
+                "directives": {
+                  "lookAtMouse": { "maxRotation": 15, "lerp": 0.1 },
+                  "autoAnimate": { "floatAmplitude": 10, "floatFrequency": 0.003 }
+                }
+              },
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "width": "300px",
+                    "padding": "40px",
+                    "backgroundColor": "rgba(255, 255, 255, 0.05)",
+                    "borderRadius": "32px",
+                    "backdropFilter": "blur(20px)",
+                    "border": "1px solid rgba(255, 255, 255, 0.1)",
+                    "boxShadow": "0 25px 50px rgba(0,0,0,0.5)",
+                    "transition": "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease",
+                    "cursor": "pointer"
+                  }
+                },
+                "children": [
+                  { "tag": "div", "text": "✨", "properties": { "style": { "fontSize": "40px", "marginBottom": "20px" } } },
+                  { "tag": "h3", "text": "Partículas Vivas", "properties": { "style": { "fontSize": "1.5rem", "color": "white", "margin": "0 0 15px 0" } } },
+                  { "tag": "p", "text": "Mallas de red interactivas que responden a la masa e inercia de tu cursor.", "properties": { "style": { "color": "#cbd5e1", "lineHeight": "1.5", "margin": "0" } } }
+                ],
+                "directives": {
+                  "lookAtMouse": { "maxRotation": 15, "lerp": 0.1 },
+                  "autoAnimate": { "floatAmplitude": 15, "floatFrequency": 0.0025 }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "div",
+        "path": "app.procedural",
+        "properties": {
+          "style": {
+            "position": "absolute",
+            "top": "0",
+            "left": "0",
+            "width": "100%",
+            "height": "100%",
+            "pointerEvents": "none",
+            "zIndex": "0",
+            "overflow": "hidden"
+          }
+        },
+        "children": [
+          {
+            "tag": "div",
+            "properties": {
+              "style": {
+                "width": "15px",
+                "height": "15px",
+                "backgroundColor": "#0ea5e9",
+                "borderRadius": "50%",
+                "filter": "blur(4px)",
+                "opacity": "0.4"
+              }
+            },
+            "directives": {
+              "instances": {
+                "count": 40,
+                "spread": { "x": 2000, "y": 1500, "z": 500 },
+                "scale": { "min": 0.2, "max": 2.5 }
+              },
+              "autoAnimate": { "floatAmplitude": 100, "floatFrequency": 0.001, "rotateX": 0.5, "rotateY": 0.3 }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

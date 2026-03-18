@@ -1,7 +1,15 @@
 {
   "meta": {
     "title": "Ecosistema V4 - Demo",
-    "description": "El futuro de la web impulsada por datos."
+    "description": "El futuro de la web impulsada por datos.",
+    "network": {
+      "type": "mesh",
+      "density": 45,
+      "lineColor": "#8b5cf6",
+      "glowColor": "#ddd6fe",
+      "radius": 180,
+      "interaction": "repel"
+    }
   },
   "masterNodes": {
     "header-template": {
@@ -19,28 +27,39 @@
           "tag": "h1",
           "text": "Ecosistema V4",
           "properties": {
-            "style": { "margin": "0" }
+            "style": {
+              "margin": "0"
+            }
           }
         }
       ]
     }
   },
   "routes": {
-    "/": { "targetNodePath": "root.home" },
-    "/about": { "targetNodePath": "root.about" }
+    "/": {
+      "targetNodePath": "root.home"
+    },
+    "/about": {
+      "targetNodePath": "root.about"
+    }
   },
   "root": {
     "tag": "div",
     "path": "root",
     "properties": {
-      "style": { "fontFamily": "sans-serif" }
+      "style": {
+        "fontFamily": "sans-serif"
+      }
     },
     "children": [
       {
         "tag": "div",
         "path": "root.home",
         "properties": {
-          "style": { "display": "block", "minHeight": "100vh" }
+          "style": {
+            "display": "block",
+            "minHeight": "100vh"
+          }
         },
         "children": [
           {
@@ -51,14 +70,22 @@
             "tag": "section",
             "path": "root.home.content",
             "properties": {
-              "style": { "padding": "20px", "maxWidth": "800px", "margin": "0 auto" }
+              "style": {
+                "padding": "20px",
+                "maxWidth": "800px",
+                "margin": "0 auto"
+              }
             },
             "children": [
               {
                 "tag": "h2",
                 "path": "root.home.content.title",
-                "text": "Intérprete de Datos de Alta Frecuencia",
-                "properties": { "style": { "color": "#34495e" } }
+                "text": "Int\u00e9rprete de Datos de Alta Frecuencia",
+                "properties": {
+                  "style": {
+                    "color": "#34495e"
+                  }
+                }
               },
               {
                 "tag": "p",
@@ -69,14 +96,23 @@
                 "tag": "div",
                 "path": "root.home.features",
                 "properties": {
-                  "style": { "display": "flex", "gap": "20px", "marginTop": "20px" }
+                  "style": {
+                    "display": "flex",
+                    "gap": "20px",
+                    "marginTop": "20px"
+                  }
                 },
                 "children": [
                   {
                     "tag": "div",
                     "path": "root.home.features.hydration",
                     "properties": {
-                      "style": { "flex": "1", "padding": "15px", "border": "1px solid #bdc3c7", "borderRadius": "5px" }
+                      "style": {
+                        "flex": "1",
+                        "padding": "15px",
+                        "border": "1px solid #bdc3c7",
+                        "borderRadius": "5px"
+                      }
                     },
                     "children": [
                       {
@@ -98,7 +134,12 @@
                     "tag": "div",
                     "path": "root.home.features.forms",
                     "properties": {
-                      "style": { "flex": "1", "padding": "15px", "border": "1px solid #bdc3c7", "borderRadius": "5px" }
+                      "style": {
+                        "flex": "1",
+                        "padding": "15px",
+                        "border": "1px solid #bdc3c7",
+                        "borderRadius": "5px"
+                      }
                     },
                     "children": [
                       {
@@ -109,9 +150,13 @@
                       {
                         "tag": "input",
                         "path": "root.home.features.forms.input",
-                        "text": "Escribe aquí...",
+                        "text": "Escribe aqu\u00ed...",
                         "properties": {
-                          "style": { "width": "100%", "padding": "8px", "boxSizing": "border-box" }
+                          "style": {
+                            "width": "100%",
+                            "padding": "8px",
+                            "boxSizing": "border-box"
+                          }
                         },
                         "directives": {
                           "sync": true
@@ -122,7 +167,10 @@
                         "path": "root.home.features.forms.output",
                         "text": "Escribe arriba para ver el Data Binding.",
                         "properties": {
-                          "style": { "marginTop": "10px", "color": "#7f8c8d" }
+                          "style": {
+                            "marginTop": "10px",
+                            "color": "#7f8c8d"
+                          }
                         }
                       }
                     ]
@@ -133,13 +181,18 @@
                 "tag": "div",
                 "path": "root.home.physics",
                 "properties": {
-                  "style": { "marginTop": "40px", "padding": "20px", "background": "#ecf0f1", "borderRadius": "5px" }
+                  "style": {
+                    "marginTop": "40px",
+                    "padding": "20px",
+                    "background": "#ecf0f1",
+                    "borderRadius": "5px"
+                  }
                 },
                 "children": [
                   {
                     "tag": "h3",
                     "path": "root.home.physics.title",
-                    "text": "Motor de Física & Culling"
+                    "text": "Motor de F\u00edsica & Culling"
                   },
                   {
                     "tag": "div",
@@ -156,7 +209,10 @@
                     },
                     "directives": {
                       "physics": {
-                        "velocity": { "x": 0, "y": 0 }
+                        "velocity": {
+                          "x": 0,
+                          "y": 0
+                        }
                       }
                     }
                   },
@@ -165,7 +221,11 @@
                     "path": "root.home.physics.btn",
                     "text": "Empujar Pelota",
                     "properties": {
-                      "style": { "marginTop": "20px", "padding": "10px 20px", "cursor": "pointer" }
+                      "style": {
+                        "marginTop": "20px",
+                        "padding": "10px 20px",
+                        "cursor": "pointer"
+                      }
                     }
                   }
                 ]

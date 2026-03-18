@@ -284,7 +284,10 @@
                 "justifyContent": "center",
                 "alignItems": "center",
                 "padding": "20px",
-                "overflow": "hidden"
+                "overflow": "hidden",
+                "backgroundColor": "#151515",
+                "backgroundImage": "linear-gradient(#252526 1px, transparent 1px), linear-gradient(90deg, #252526 1px, transparent 1px)",
+                "backgroundSize": "20px 20px"
               }
             },
             "children": [
@@ -301,7 +304,7 @@
                     "transition": "width 0.3s, height 0.3s"
                   },
                   "attributes": {
-                    "src": "index.html"
+                    "src": "index.html?builder"
                   }
                 },
                 "directives": {

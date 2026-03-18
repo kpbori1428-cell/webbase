@@ -60,8 +60,140 @@ class V4Engine {
             this.dataTree = data.tree || data;
             this.saveState(); // Initial save
 
+            // Initialize Network if configured in meta or root
+            if (this.dataTree.meta && this.dataTree.meta.network) {
+                this.initNetwork(this.dataTree.meta.network);
+            }
+
             // Render root
             this.render();
+
+        // --- INFINITE CANVAS PAN & ZOOM (BUILDER MODE ONLY) ---
+        if (window.parent !== window) {
+            let isPanning = false;
+            let panStartX = 0, panStartY = 0;
+            let currentPanX = 0, currentPanY = 0;
+            let currentZoom = 1;
+
+            this.rootElement.style.transformOrigin = '0 0';
+            this.rootElement.style.width = '100vw';
+            this.rootElement.style.height = '100vh';
+            this.rootElement.style.position = 'absolute';
+            this.rootElement.style.top = '0';
+            this.rootElement.style.left = '0';
+
+            const updateCanvasView = () => {
+                this.rootElement.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoom})`;
+            };
+
+            // Spacebar + Drag or Middle Mouse Button to Pan
+            let spacePressed = false;
+            // Global Click to close context menus
+        window.addEventListener("click", () => {
+            document.querySelectorAll(".v4-context-menu").forEach(m => m.remove());
+        });
+
+        // 3. Multi-Selection Marquee Box (Builder Mode)
+        let marqueeBox = null; let startMarqueeX = 0, startMarqueeY = 0;
+
+        document.body.addEventListener('mousedown', (e) => {
+            if (e.target === document.body || e.target === this.rootElement) {
+                document.querySelectorAll('[data-v4-selected]').forEach(el => { el.style.outline = el.getAttribute('data-v4-old-outline') || ''; el.style.outlineOffset = el.getAttribute('data-v4-old-offset') || ''; el.removeAttribute('data-v4-selected'); });
+                document.querySelectorAll(".v4-resize-handle").forEach(h => h.remove());
+
+                if (e.button === 0 && !e.shiftKey && !spacePressed) {
+                    startMarqueeX = e.clientX; startMarqueeY = e.clientY;
+                    marqueeBox = document.createElement('div');
+                    marqueeBox.style.position = 'fixed'; marqueeBox.style.border = '1px solid rgba(0, 122, 204, 0.8)'; marqueeBox.style.backgroundColor = 'rgba(0, 122, 204, 0.1)'; marqueeBox.style.zIndex = '999999'; marqueeBox.style.pointerEvents = 'none'; marqueeBox.style.left = startMarqueeX + 'px'; marqueeBox.style.top = startMarqueeY + 'px'; marqueeBox.style.width = '0px'; marqueeBox.style.height = '0px';
+                    document.body.appendChild(marqueeBox);
+                }
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (marqueeBox) {
+                marqueeBox.style.left = Math.min(startMarqueeX, e.clientX) + 'px'; marqueeBox.style.top = Math.min(startMarqueeY, e.clientY) + 'px';
+                marqueeBox.style.width = Math.abs(e.clientX - startMarqueeX) + 'px'; marqueeBox.style.height = Math.abs(e.clientY - startMarqueeY) + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (marqueeBox) {
+                const boxRect = marqueeBox.getBoundingClientRect();
+                const selectedPaths = [];
+                document.querySelectorAll('[data-v4-path]').forEach(node => {
+                    const nodeRect = node.getBoundingClientRect();
+                    if (!(boxRect.right < nodeRect.left || boxRect.left > nodeRect.right || boxRect.bottom < nodeRect.top || boxRect.top > nodeRect.bottom)) {
+                        node.setAttribute('data-v4-old-outline', node.style.outline || ''); node.setAttribute('data-v4-old-offset', node.style.outlineOffset || '');
+                        node.style.outline = '2px solid #007acc'; node.style.outlineOffset = '-2px'; node.setAttribute('data-v4-selected', 'true');
+                        selectedPaths.push(node.getAttribute('data-v4-path'));
+                    }
+                });
+                if (selectedPaths.length > 0) window.parent.postMessage({ type: 'V4_NODE_SELECTED', path: selectedPaths[0], nodeData: this.findNodeByPath(this.dataTree, selectedPaths[0]) }, '*');
+                marqueeBox.remove(); marqueeBox = null;
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && e.target === document.body) {
+                    e.preventDefault();
+                    spacePressed = true;
+                    document.body.style.cursor = 'grab';
+                }
+            });
+            window.addEventListener('keyup', (e) => {
+                if (e.code === 'Space') {
+                    spacePressed = false;
+                    if (!isPanning) document.body.style.cursor = 'default';
+                }
+            });
+
+            window.addEventListener('mousedown', (e) => {
+                if (e.button === 1 || (e.button === 0 && spacePressed)) {
+                    e.preventDefault();
+                    isPanning = true;
+                    panStartX = e.clientX - currentPanX;
+                    panStartY = e.clientY - currentPanY;
+                    document.body.style.cursor = 'grabbing';
+                }
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isPanning) return;
+                currentPanX = e.clientX - panStartX;
+                currentPanY = e.clientY - panStartY;
+                updateCanvasView();
+            });
+
+            window.addEventListener('mouseup', (e) => {
+                if (isPanning) {
+                    isPanning = false;
+                    document.body.style.cursor = spacePressed ? 'grab' : 'default';
+                }
+            });
+
+            // Ctrl + Wheel to Zoom
+            window.addEventListener('wheel', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    const zoomSensitivity = 0.001;
+                    const delta = -e.deltaY * zoomSensitivity;
+                    const newZoom = Math.min(Math.max(0.1, currentZoom + delta), 5); // Clamped between 10% and 500%
+
+                    const mouseX = e.clientX;
+                    const mouseY = e.clientY;
+
+                    currentPanX = mouseX - (mouseX - currentPanX) * (newZoom / currentZoom);
+                    currentPanY = mouseY - (mouseY - currentPanY) * (newZoom / currentZoom);
+                    currentZoom = newZoom;
+                    updateCanvasView();
+                }
+            }, { passive: false });
+
+            // Expose the zoom level globally so drag logic can compensate for scaled coordinates
+            window.__v4CanvasZoom = () => currentZoom;
+        }
+
 
             // Start Physics Loop
             this.lastFrameTime = performance.now();
@@ -92,6 +224,60 @@ class V4Engine {
             console.warn("V4: Límite de profundidad (32) alcanzado.", nodeData.path);
             return;
         }
+
+        // --- Generador Procedural de Instancias ---
+        if (nodeData.directives && nodeData.directives.instances && !nodeData.__isInstance) {
+            const inst = nodeData.directives.instances;
+            const cantidad = inst.count || 0;
+
+            // Create a wrapper container to hold all instances cleanly
+            const container = document.createElement('div');
+            container.className = 'v4-instance-group';
+            container.style.position = 'absolute';
+            container.style.top = '0';
+            container.style.left = '0';
+            container.style.width = '100%';
+            container.style.height = '100%';
+            container.style.pointerEvents = 'none'; // Let clicks pass through to underlying elements
+
+            for (let i = 0; i < cantidad; i++) {
+                const copia = JSON.parse(JSON.stringify(nodeData));
+                delete copia.directives.instances;
+                copia.__isInstance = true;
+
+                // Randomize Base Transform
+                let tx = 0, ty = 0, tz = 0, rx = 0, ry = 0, rz = 0, s = 1;
+
+                if (inst.spread) {
+                    tx = (Math.random() - 0.5) * (inst.spread.x || 0);
+                    ty = (Math.random() - 0.5) * (inst.spread.y || 0);
+                    tz = (Math.random() - 0.5) * (inst.spread.z || 0);
+                }
+                if (inst.rotate) {
+                    rx = (Math.random() - 0.5) * (inst.rotate.x || 0);
+                    ry = (Math.random() - 0.5) * (inst.rotate.y || 0);
+                    rz = (Math.random() - 0.5) * (inst.rotate.z || 0);
+                }
+                if (inst.scale) {
+                    s = (inst.scale.min || 1) + Math.random() * ((inst.scale.max || 1) - (inst.scale.min || 1));
+                }
+
+                const existingTransform = copia.properties?.style?.transform || '';
+                const randomTransform = `translate3d(${tx}px, ${ty}px, ${tz}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) scale(${s})`.trim();
+
+                if (!copia.properties) copia.properties = {};
+                if (!copia.properties.style) copia.properties.style = {};
+                copia.properties.style.transform = `${existingTransform} ${randomTransform}`.trim();
+
+                // Allow instances to be clickable/interactive despite the wrapper
+                copia.properties.style.pointerEvents = 'auto';
+
+                this.mount(copia, container, depth + 1);
+            }
+            parentElement.appendChild(container);
+            return container;
+        }
+
 
         // Resolving Master Nodes (Instanciación por Referencia)
         if (nodeData.masterId && this.masterNodes[nodeData.masterId]) {
@@ -145,6 +331,16 @@ class V4Engine {
             });
         }
 
+                // --- Dynamic Transform Stacking (Física Avanzada V4) ---
+        // Setup safe defaults
+        node.style.setProperty('--base-transform', nodeData.properties?.style?.transform || 'translate3d(0,0,0)');
+        node.style.setProperty('--dyn-drag', 'translate3d(0,0,0)');
+        node.style.setProperty('--dyn-mouse-follow', 'translate3d(0,0,0)');
+        node.style.setProperty('--dyn-look-at', 'rotateX(0deg) rotateY(0deg)');
+        node.style.setProperty('--dyn-auto-animate', 'rotateX(0deg) rotateY(0deg) rotateZ(0deg) translateY(0px)');
+
+        node.style.transform = `var(--base-transform) var(--dyn-drag) var(--dyn-mouse-follow) var(--dyn-look-at) var(--dyn-auto-animate)`.trim();
+
         // Aplicar Propiedades (Atributos y Estilos)
         this.applyProperties(node, nodeData.properties);
 
@@ -169,61 +365,262 @@ class V4Engine {
                 });
             }
 
-            // 0.5 Context Menu
-            node.addEventListener("contextmenu", (e) => {
+            // 2. Advanced Draggable Canvas (Builder Absolute / Production Inertia)
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+
+            // Variables para Inercia y Física
+            let velocityX = 0, velocityY = 0;
+            let lastX = 0, lastY = 0;
+            let lastTime = 0;
+            let inertiaFrameId = null;
+
+            node.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('v4-resize-handle') || node.getAttribute('contenteditable') === 'true') return;
+
+                e.stopPropagation();
+                if (inertiaFrameId) cancelAnimationFrame(inertiaFrameId);
+
+                // Builder Mode: Set absolute
+                if (window.parent !== window) {
+                    if (node.style.position !== 'absolute') {
+                        const rect = node.getBoundingClientRect();
+                        node.style.position = 'absolute';
+                        node.style.left = rect.left + 'px';
+                        node.style.top = rect.top + 'px';
+                        node.style.margin = '0';
+                    }
+                }
+
+                isDragging = true;
+                startX = e.clientX; startY = e.clientY;
+                lastX = e.clientX; lastY = e.clientY;
+                lastTime = performance.now();
+                velocityX = 0; velocityY = 0;
+
+                // Extraer Offset
+                const currentDragStr = node.style.getPropertyValue('--dyn-drag');
+                const match = currentDragStr.match(/translate3d\(([-.\d]+)px,\s*([-.\d]+)px/);
+                initialLeft = match ? parseFloat(match[1]) : 0;
+                initialTop = match ? parseFloat(match[2]) : 0;
+
+                node.style.zIndex = '1000';
+                node.style.cursor = 'grabbing';
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+
+                const zoom = window.__v4CanvasZoom ? window.__v4CanvasZoom() : 1;
+                let dx = (e.clientX - startX) / zoom;
+                let dy = (e.clientY - startY) / zoom;
+
+                // --- Smart Snapping (Guías Magnéticas) en Modo Builder ---
+                if (window.parent !== window) {
+                    document.querySelectorAll('.v4-smart-guide').forEach(g => g.remove());
+                    const SNAP_DISTANCE = 10;
+
+                    const currentRect = node.getBoundingClientRect();
+                    const proposedLeft = initialLeft + dx;
+                    const proposedTop = initialTop + dy;
+                    const proposedRight = proposedLeft + currentRect.width;
+                    const proposedBottom = proposedTop + currentRect.height;
+                    const proposedCenterX = proposedLeft + currentRect.width / 2;
+                    const proposedCenterY = proposedTop + currentRect.height / 2;
+
+                    let snappedX = false; let snappedY = false;
+
+                    const parentContainer = node.parentElement;
+                    if (parentContainer) {
+                        const siblings = Array.from(parentContainer.children).filter(c => c !== node && c.hasAttribute('data-v4-path'));
+                        for (const sib of siblings) {
+                            const sibLeft = parseFloat(sib.style.left || 0);
+                            const sibTop = parseFloat(sib.style.top || 0);
+                            const sibWidth = sib.getBoundingClientRect().width;
+                            const sibHeight = sib.getBoundingClientRect().height;
+                            const sibRight = sibLeft + sibWidth;
+                            const sibBottom = sibTop + sibHeight;
+                            const sibCenterX = sibLeft + sibWidth / 2;
+                            const sibCenterY = sibTop + sibHeight / 2;
+
+                            const drawGuide = (x, y, w, h) => {
+                                const guide = document.createElement('div');
+                                guide.className = 'v4-smart-guide';
+                                guide.style.position = 'absolute';
+                                guide.style.backgroundColor = '#ff00ff';
+                                guide.style.zIndex = '99999';
+                                guide.style.left = x + 'px'; guide.style.top = y + 'px';
+                                guide.style.width = w + 'px'; guide.style.height = h + 'px';
+                                guide.style.pointerEvents = 'none';
+                                parentContainer.appendChild(guide);
+                            };
+
+                            if (!snappedX) {
+                                if (Math.abs(proposedLeft - sibLeft) < SNAP_DISTANCE) { dx = sibLeft - initialLeft; snappedX = true; drawGuide(sibLeft, Math.min(proposedTop, sibTop), 1, Math.max(proposedBottom, sibBottom) - Math.min(proposedTop, sibTop)); }
+                                else if (Math.abs(proposedCenterX - sibCenterX) < SNAP_DISTANCE) { dx = sibCenterX - currentRect.width / 2 - initialLeft; snappedX = true; drawGuide(sibCenterX, Math.min(proposedTop, sibTop), 1, Math.max(proposedBottom, sibBottom) - Math.min(proposedTop, sibTop)); }
+                                else if (Math.abs(proposedRight - sibRight) < SNAP_DISTANCE) { dx = sibRight - currentRect.width - initialLeft; snappedX = true; drawGuide(sibRight, Math.min(proposedTop, sibTop), 1, Math.max(proposedBottom, sibBottom) - Math.min(proposedTop, sibTop)); }
+                            }
+                            if (!snappedY) {
+                                if (Math.abs(proposedTop - sibTop) < SNAP_DISTANCE) { dy = sibTop - initialTop; snappedY = true; drawGuide(Math.min(proposedLeft, sibLeft), sibTop, Math.max(proposedRight, sibRight) - Math.min(proposedLeft, sibLeft), 1); }
+                                else if (Math.abs(proposedCenterY - sibCenterY) < SNAP_DISTANCE) { dy = sibCenterY - currentRect.height / 2 - initialTop; snappedY = true; drawGuide(Math.min(proposedLeft, sibLeft), sibCenterY, Math.max(proposedRight, sibRight) - Math.min(proposedLeft, sibLeft), 1); }
+                                else if (Math.abs(proposedBottom - sibBottom) < SNAP_DISTANCE) { dy = sibBottom - currentRect.height - initialTop; snappedY = true; drawGuide(Math.min(proposedLeft, sibLeft), sibBottom, Math.max(proposedRight, sibRight) - Math.min(proposedLeft, sibLeft), 1); }
+                            }
+                            if (snappedX && snappedY) break;
+                        }
+                    }
+                }
+
+                // Tracking Velocidad Inercial
+                const now = performance.now();
+                const dt = now - lastTime;
+                if (dt > 0) {
+                    velocityX = (e.clientX - lastX) / dt;
+                    velocityY = (e.clientY - lastY) / dt;
+                }
+                lastX = e.clientX;
+                lastY = e.clientY;
+                lastTime = now;
+
+                node.setAttribute('data-dyn-x', initialLeft + dx);
+                node.setAttribute('data-dyn-y', initialTop + dy);
+                node.style.setProperty('--dyn-drag', `translate3d(${initialLeft + dx}px, ${initialTop + dy}px, 0)`);
+            });
+
+            document.addEventListener('mouseup', (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                node.style.zIndex = '';
+                node.style.cursor = '';
+
+                if (window.parent !== window) {
+                    document.querySelectorAll('.v4-smart-guide').forEach(g => g.remove());
+
+                    // Parse the current offset from --dyn-drag
+                    const finalDrag = node.style.getPropertyValue('--dyn-drag');
+                    const dragMatch = finalDrag.match(/translate3d\(([-.\d]+)px,\s*([-.\d]+)px/);
+                    const dx = dragMatch ? parseFloat(dragMatch[1]) : 0;
+                    const dy = dragMatch ? parseFloat(dragMatch[2]) : 0;
+
+                    const currentLeft = parseFloat(node.style.left || 0);
+                    const currentTop = parseFloat(node.style.top || 0);
+
+                    node.style.left = (currentLeft + dx) + 'px';
+                    node.style.top = (currentTop + dy) + 'px';
+                    node.style.setProperty('--dyn-drag', 'translate3d(0,0,0)');
+
+                    this.updateNode(nodeData.path, {
+                        properties: { style: { left: node.style.left, top: node.style.top, position: 'absolute' } }
+                    });
+                    this.saveState();
+                    window.parent.postMessage({ type: "V4_NODE_SELECTED", path: nodeData.path, nodeData: this.findNodeByPath(this.dataTree, nodeData.path) }, "*");
+                } else {
+                    // Production Mode: True Coasting / Spring Inertia Return to Origin
+                    const FRICTION = 0.92;
+                    const SPRING = 0.08;
+
+                    let localVelX = velocityX;
+                    let localVelY = velocityY;
+                    let currentX = parseFloat(node.getAttribute('data-dyn-x')) || 0;
+                    let currentY = parseFloat(node.getAttribute('data-dyn-y')) || 0;
+
+                    const coastingLoop = () => {
+                        if (Math.abs(localVelX) < 0.01 && Math.abs(localVelY) < 0.01 && Math.abs(currentX) < 0.5 && Math.abs(currentY) < 0.5) {
+                            node.style.setProperty('--dyn-drag', 'translate3d(0px, 0px, 0)');
+                            node.setAttribute('data-dyn-x', '0');
+                            node.setAttribute('data-dyn-y', '0');
+                            return;
+                        }
+
+                        localVelX *= FRICTION; localVelY *= FRICTION;
+                        const ax = (0 - currentX) * SPRING; const ay = (0 - currentY) * SPRING;
+                        localVelX += ax; localVelY += ay;
+                        currentX += localVelX; currentY += localVelY;
+
+                        node.style.setProperty('--dyn-drag', `translate3d(${currentX}px, ${currentY}px, 0)`);
+                        node.setAttribute('data-dyn-x', currentX); node.setAttribute('data-dyn-y', currentY);
+                        inertiaFrameId = requestAnimationFrame(coastingLoop);
+                    };
+                    coastingLoop();
+                }
+            });
+
+            // Allow receiving new items dropped from the Palette (HTML5 drop from outside iframe)
+            node.addEventListener('dragover', (e) => {
+                e.preventDefault(); // Necessary to allow dropping
+                e.dataTransfer.dropEffect = 'copy';
+            });
+
+            node.addEventListener('drop', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
 
+                const newTag = e.dataTransfer.getData('v4/new-tag');
+                const newText = e.dataTransfer.getData('v4/new-text');
+
+                if (newTag) {
+                    // Calculate drop coordinates relative to the canvas pan and zoom
+                    const zoom = window.__v4CanvasZoom ? window.__v4CanvasZoom() : 1;
+
+                    const rootRect = this.rootElement.getBoundingClientRect();
+                    const nodeRect = node.getBoundingClientRect();
+
+                    const dropX = (e.clientX - nodeRect.left) / zoom;
+                    const dropY = (e.clientY - nodeRect.top) / zoom;
+
+                    const newNode = {
+                        id: 'node-' + Math.random().toString(36).substr(2, 9),
+                        tag: newTag,
+                        text: newText || '',
+                        properties: {
+                            style: {
+                                position: 'absolute',
+                                left: dropX + 'px',
+                                top: dropY + 'px',
+                                padding: '10px',
+                                border: '1px dashed #7f8c8d'
+                            }
+                        }
+                    };
+
+                    // Insert into the tree as a child of whatever container we dropped onto
+                    this.addNodeToTreeAdvanced(nodeData.path, newNode, 'inside');
+                    this.saveState();
+                }
+            });
+
+            // 0.5 Context Menu
+            node.addEventListener("contextmenu", (e) => {
+                e.preventDefault(); e.stopPropagation();
                 document.querySelectorAll(".v4-context-menu").forEach(m => m.remove());
 
-                const menu = document.createElement("div");
-                menu.className = "v4-context-menu";
-                menu.style.position = "fixed";
-                menu.style.background = "#252526";
-                menu.style.border = "1px solid #454545";
-                menu.style.boxShadow = "0 4px 6px rgba(0,0,0,0.5)";
-                menu.style.zIndex = "99999";
-                menu.style.borderRadius = "4px";
-                menu.style.padding = "4px 0";
-                menu.style.color = "#d4d4d4";
-                menu.style.fontFamily = "sans-serif";
-                menu.style.fontSize = "12px";
-                menu.style.minWidth = "120px";
+                const menu = document.createElement("div"); menu.className = "v4-context-menu";
+                menu.style.position = "fixed"; menu.style.background = "#252526"; menu.style.border = "1px solid #454545"; menu.style.boxShadow = "0 4px 6px rgba(0,0,0,0.5)"; menu.style.zIndex = "99999"; menu.style.borderRadius = "4px"; menu.style.padding = "4px 0"; menu.style.color = "#d4d4d4"; menu.style.fontFamily = "sans-serif"; menu.style.fontSize = "12px"; menu.style.minWidth = "120px";
+                menu.style.left = e.clientX + "px"; menu.style.top = e.clientY + "px";
 
                 const styleBtn = (btn) => {
-                    btn.style.padding = "6px 12px";
-                    btn.style.cursor = "pointer";
+                    btn.style.padding = "6px 12px"; btn.style.cursor = "pointer";
                     btn.addEventListener('mouseenter', () => { btn.style.background = "#007acc"; btn.style.color = "white"; });
                     btn.addEventListener('mouseleave', () => { btn.style.background = "transparent"; btn.style.color = "#d4d4d4"; });
                 };
 
-                menu.style.left = e.clientX + "px";
-                menu.style.top = e.clientY + "px";
+                const currentZ = parseInt(nodeData.properties?.style?.zIndex || 1);
 
-                const duplicateBtn = document.createElement("div");
-                duplicateBtn.textContent = "⧉ Duplicate";
-                styleBtn(duplicateBtn);
-                duplicateBtn.onclick = () => {
-                    this.handleBuilderAction({ action: "DUPLICATE", path: nodeData.path });
-                    this.saveState();
-                    menu.remove();
-                };
+                const bringFrontBtn = document.createElement("div"); bringFrontBtn.textContent = "↑ Bring Forward"; styleBtn(bringFrontBtn);
+                bringFrontBtn.onclick = () => { node.style.zIndex = currentZ + 1; this.updateNode(nodeData.path, { properties: { style: { zIndex: currentZ + 1 } } }); this.saveState(); menu.remove(); };
 
-                const deleteBtn = document.createElement("div");
-                deleteBtn.textContent = "× Delete";
-                styleBtn(deleteBtn);
-                deleteBtn.style.color = "#ff6b6b";
-                deleteBtn.onclick = () => {
-                    this.handleBuilderAction({ action: "DELETE", path: nodeData.path });
-                    this.saveState();
-                    menu.remove();
-                };
+                const sendBackBtn = document.createElement("div"); sendBackBtn.textContent = "↓ Send Backward"; styleBtn(sendBackBtn);
+                sendBackBtn.onclick = () => { node.style.zIndex = currentZ - 1; this.updateNode(nodeData.path, { properties: { style: { zIndex: currentZ - 1 } } }); this.saveState(); menu.remove(); };
 
-                menu.appendChild(duplicateBtn);
-                menu.appendChild(deleteBtn);
+                const duplicateBtn = document.createElement("div"); duplicateBtn.textContent = "⧉ Duplicate"; styleBtn(duplicateBtn);
+                duplicateBtn.onclick = () => { this.handleBuilderAction({ action: "DUPLICATE", path: nodeData.path }); this.saveState(); menu.remove(); };
+
+                const deleteBtn = document.createElement("div"); deleteBtn.textContent = "× Delete"; styleBtn(deleteBtn); deleteBtn.style.color = "#ff6b6b";
+                deleteBtn.addEventListener('mouseleave', () => { deleteBtn.style.background = "transparent"; deleteBtn.style.color = "#ff6b6b"; });
+                deleteBtn.onclick = () => { this.handleBuilderAction({ action: "DELETE", path: nodeData.path }); this.saveState(); menu.remove(); };
+
+                menu.appendChild(bringFrontBtn); menu.appendChild(sendBackBtn); menu.appendChild(duplicateBtn); menu.appendChild(deleteBtn);
                 document.body.appendChild(menu);
             });
-
             // 0.7 Resize Handles Logic (Injected on selection click)
             node.addEventListener('click', (e) => {
                 // Remove existing handles from everywhere
@@ -253,9 +650,10 @@ class V4Engine {
                         const startWidth = node.getBoundingClientRect().width;
                         const startHeight = node.getBoundingClientRect().height;
 
+                        const zoom = window.__v4CanvasZoom ? window.__v4CanvasZoom() : 1;
                         const onMouseMove = (moveEvent) => {
-                            if (pos.includes("e")) node.style.width = (startWidth + (moveEvent.clientX - startX)) + "px";
-                            if (pos.includes("s")) node.style.height = (startHeight + (moveEvent.clientY - startY)) + "px";
+                            if (pos.includes("e")) node.style.width = (startWidth + (moveEvent.clientX - startX) / zoom) + "px";
+                            if (pos.includes("s")) node.style.height = (startHeight + (moveEvent.clientY - startY) / zoom) + "px";
                         };
 
                         const onMouseUp = () => {
@@ -304,93 +702,106 @@ class V4Engine {
                 }
             });
 
-            // 2. Drag & Drop Visual (Mover Elementos Directamente con Precisión)
-            node.setAttribute('draggable', 'true');
-            node.addEventListener('dragstart', (e) => {
-                e.stopPropagation();
-                e.dataTransfer.setData('v4/path', nodeData.path);
-                node.style.opacity = '0.5';
-            });
-            node.addEventListener('dragend', (e) => {
-                e.stopPropagation();
-                node.style.opacity = '1';
-                document.querySelectorAll('.v4-drag-insert-before, .v4-drag-insert-after, .v4-drag-over').forEach(el => {
-                    el.classList.remove('v4-drag-insert-before', 'v4-drag-insert-after', 'v4-drag-over');
-                });
-            });
-            node.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
 
-                const rect = node.getBoundingClientRect();
-                const relativeY = e.clientY - rect.top;
-
-                if (node.hasAttribute('data-v4-drag-pos')) {
-                    if (node.getAttribute('data-v4-drag-pos') === 'before') node.style.borderTop = node.getAttribute('data-v4-old-borderTop') || '';
-                    if (node.getAttribute('data-v4-drag-pos') === 'after') node.style.borderBottom = node.getAttribute('data-v4-old-borderBottom') || '';
-                    if (node.getAttribute('data-v4-drag-pos') === 'inside') node.style.border = node.getAttribute('data-v4-old-border') || '';
-                    node.removeAttribute('data-v4-drag-pos');
-                }
-
-
-                if (relativeY < rect.height / 4) {
-                    node.setAttribute('data-v4-old-borderTop', node.style.borderTop); node.style.borderTop = '3px solid #e74c3c'; node.setAttribute('data-v4-drag-pos', 'before');
-                    e.dataTransfer.dropEffect = 'move';
-                } else if (relativeY > (rect.height * 3) / 4) {
-                    node.setAttribute('data-v4-old-borderBottom', node.style.borderBottom); node.style.borderBottom = '3px solid #e74c3c'; node.setAttribute('data-v4-drag-pos', 'after');
-                    e.dataTransfer.dropEffect = 'move';
-                } else {
-                    node.setAttribute('data-v4-old-border', node.style.border); node.style.border = '2px dashed #e67e22'; node.setAttribute('data-v4-drag-pos', 'inside');
-                    e.dataTransfer.dropEffect = 'copy';
-                }
-            });
-            node.addEventListener('dragleave', (e) => {
-
-                if (node.hasAttribute('data-v4-drag-pos')) {
-                    if (node.getAttribute('data-v4-drag-pos') === 'before') node.style.borderTop = node.getAttribute('data-v4-old-borderTop') || '';
-                    if (node.getAttribute('data-v4-drag-pos') === 'after') node.style.borderBottom = node.getAttribute('data-v4-old-borderBottom') || '';
-                    if (node.getAttribute('data-v4-drag-pos') === 'inside') node.style.border = node.getAttribute('data-v4-old-border') || '';
-                    node.removeAttribute('data-v4-drag-pos');
-                }
-
-            });
-            node.addEventListener('drop', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const sourcePath = e.dataTransfer.getData('v4/path');
-                const newTag = e.dataTransfer.getData('v4/new-tag');
-                const newText = e.dataTransfer.getData('v4/new-text');
-
-                const insertPos = node.getAttribute('data-v4-drag-pos') || 'inside';
-
-                if (node.hasAttribute('data-v4-drag-pos')) {
-                    if (node.getAttribute('data-v4-drag-pos') === 'before') node.style.borderTop = node.getAttribute('data-v4-old-borderTop') || '';
-                    if (node.getAttribute('data-v4-drag-pos') === 'after') node.style.borderBottom = node.getAttribute('data-v4-old-borderBottom') || '';
-                    if (node.getAttribute('data-v4-drag-pos') === 'inside') node.style.border = node.getAttribute('data-v4-old-border') || '';
-                    node.removeAttribute('data-v4-drag-pos');
-                }
-
-
-                if (newTag) {
-                    const newNode = {
-                        id: 'node-' + Math.random().toString(36).substr(2, 9),
-                        tag: newTag,
-                        text: newText || '',
-                        properties: { style: { padding: '10px', margin: '5px', border: '1px dashed #7f8c8d' } }
-                    };
-                    this.addNodeToTreeAdvanced(nodeData.path, newNode, insertPos);
-                    this.saveState();
-                } else if (sourcePath && sourcePath !== nodeData.path) {
-                    this.moveNodeInTreeAdvanced(sourcePath, nodeData.path, insertPos);
-                    this.saveState();
-                }
-            });
         }
 
         // Texto Seguro contra XSS (Sanitización)
         if (nodeData.text) {
             node.textContent = nodeData.text; // Native protection against XSS
+        }
+
+
+        // --- LÓGICAS DECLARATIVAS (COMPORTAMIENTOS DINÁMICOS) ---
+        if (nodeData.directives) {
+
+            // Mouse Follow (Lerp offset)
+            if (nodeData.directives.mouseFollow) {
+                const config = nodeData.directives.mouseFollow;
+                const factor = config.factor || 0.1;
+                const lerp = config.lerp || 0.1;
+                let targetX = 0, targetY = 0, currentX = 0, currentY = 0;
+
+                window.addEventListener('mousemove', (e) => {
+                    targetX = (e.clientX - window.innerWidth / 2) * factor;
+                    targetY = (e.clientY - window.innerHeight / 2) * factor;
+                });
+
+                const updateFollow = () => {
+                    if (!document.body.contains(node)) return; // Cleanup
+                    currentX += (targetX - currentX) * lerp;
+                    currentY += (targetY - currentY) * lerp;
+                    node.style.setProperty('--dyn-mouse-follow', `translate3d(${currentX}px, ${currentY}px, 0)`);
+                    requestAnimationFrame(updateFollow);
+                };
+                requestAnimationFrame(updateFollow);
+            }
+
+            // Look At Mouse (3D Tilt)
+            if (nodeData.directives.lookAtMouse) {
+                const config = nodeData.directives.lookAtMouse;
+                const maxRot = config.maxRotation || 15;
+                const lerp = config.lerp || 0.1;
+                let targetRX = 0, targetRY = 0, currentRX = 0, currentRY = 0;
+
+                window.addEventListener('mousemove', (e) => {
+                    const xPct = (e.clientX / window.innerWidth) - 0.5;
+                    const yPct = (e.clientY / window.innerHeight) - 0.5;
+                    targetRY = xPct * maxRot;
+                    targetRX = -yPct * maxRot;
+                });
+
+                const updateTilt = () => {
+                    if (!document.body.contains(node)) return;
+                    currentRX += (targetRX - currentRX) * lerp;
+                    currentRY += (targetRY - currentRY) * lerp;
+                    node.style.setProperty('--dyn-look-at', `rotateX(${currentRX}deg) rotateY(${currentRY}deg)`);
+                    requestAnimationFrame(updateTilt);
+                };
+                requestAnimationFrame(updateTilt);
+            }
+
+            // Auto Animate (Continuous looping animation)
+            if (nodeData.directives.autoAnimate) {
+                const config = nodeData.directives.autoAnimate;
+                const speedX = config.rotateX || 0;
+                const speedY = config.rotateY || 0;
+                const speedZ = config.rotateZ || 0;
+                const floatAmp = config.floatAmplitude || 0;
+                const floatFreq = config.floatFrequency || 0.002;
+
+                let rx = 0, ry = 0, rz = 0;
+
+                const updateLoop = (time) => {
+                    if (!document.body.contains(node)) return;
+                    rx += speedX;
+                    ry += speedY;
+                    rz += speedZ;
+
+                    const floatY = Math.sin(time * floatFreq) * floatAmp;
+                    node.style.setProperty('--dyn-auto-animate', `rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg) translateY(${floatY}px)`);
+                    requestAnimationFrame(updateLoop);
+                };
+                requestAnimationFrame(updateLoop);
+            }
+
+            // Color Cycle
+            if (nodeData.directives.colorCycle) {
+                const config = nodeData.directives.colorCycle;
+                const colors = config.colors || ['#ff0000', '#00ff00', '#0000ff'];
+                const prop = config.property || 'backgroundColor';
+                const duration = config.duration || 3000;
+                let index = 0;
+
+                node.style.transition = `${node.style.transition ? node.style.transition + ',' : ''} ${prop.replace(/[A-Z]/g, m => "-" + m.toLowerCase())} ${duration}ms linear`;
+
+                const nextColor = () => {
+                    if (!document.body.contains(node)) return;
+                    node.style[prop] = colors[index];
+                    index = (index + 1) % colors.length;
+                    setTimeout(nextColor, duration);
+                };
+                nextColor();
+            }
         }
 
         // Manejo de Formularios (Reactividad Inversa)
@@ -423,8 +834,8 @@ class V4Engine {
             if (nodeData.directives.paletteItem) {
                 node.setAttribute('draggable', 'true');
                 node.addEventListener('dragstart', (e) => {
-                    e.dataTransfer.setData('v4/new-tag', (nodeData.attributes && nodeData.attributes['data-tag']) || node.getAttribute('data-tag'));
-                    e.dataTransfer.setData('v4/new-text', (nodeData.attributes && nodeData.attributes['data-text']) || node.getAttribute('data-text'));
+                    e.dataTransfer.setData('v4/new-tag', (nodeData.properties?.attributes?.['data-tag']) || node.getAttribute('data-tag'));
+                    e.dataTransfer.setData('v4/new-text', (nodeData.properties?.attributes?.['data-text']) || node.getAttribute('data-text'));
                     e.dataTransfer.effectAllowed = 'copy';
                 });
             }
@@ -583,6 +994,43 @@ class V4Engine {
         }
     }
 
+// --- RED INTERACTIVA (NETWORK MESH) ---
+    initNetwork(config) {
+        if (!config || config.type === 'none') return;
+        let canvas = document.getElementById('v4-network-canvas');
+        if (!canvas) { canvas = document.createElement('canvas'); canvas.id = 'v4-network-canvas'; canvas.style.position = 'fixed'; canvas.style.top = '0'; canvas.style.left = '0'; canvas.style.width = '100vw'; canvas.style.height = '100vh'; canvas.style.pointerEvents = 'none'; canvas.style.zIndex = '-1'; document.body.insertBefore(canvas, document.body.firstChild); }
+        const ctx = canvas.getContext('2d'); const nodes = []; const mouse = { x: null, y: null }; let time = 0;
+        const density = config.density || 50; const lineColor = config.lineColor || '#0ea5e9'; const glowColor = config.glowColor || '#7dd3fc'; const radius = config.radius || 150; const interaction = config.interaction || 'repel';
+
+        const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; nodes.length = 0; const cols = Math.ceil(canvas.width / density) + 2; const rows = Math.ceil(canvas.height / density) + 2; for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) nodes.push({ baseX: i * density, baseY: j * density, x: i * density, y: j * density, col: i, row: j }); };
+        window.addEventListener('resize', resize); window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; }); window.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
+        resize();
+
+        const hexToRgba = (hex, alpha) => { const r = parseInt(hex.slice(1, 3), 16); const g = parseInt(hex.slice(3, 5), 16); const b = parseInt(hex.slice(5, 7), 16); return `rgba(${r}, ${g}, ${b}, ${alpha})`; };
+        const drawLine = (n1, n2) => { let opacity = 0.3; if (mouse.x !== null) { const midX = (n1.x + n2.x) / 2; const midY = (n1.y + n2.y) / 2; const dist = Math.hypot(midX - mouse.x, midY - mouse.y); if (dist < radius) opacity = Math.min(1, 0.3 + (1 - (dist / radius)) * 0.5); } ctx.beginPath(); ctx.strokeStyle = hexToRgba(lineColor, opacity); ctx.lineWidth = 1; ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y); ctx.stroke(); };
+
+        const animate = () => {
+            if (!document.getElementById('v4-network-canvas')) return;
+            time += 0.01; ctx.clearRect(0, 0, canvas.width, canvas.height);
+            nodes.forEach((n) => {
+                let targetX = n.baseX + Math.sin(time + n.col * 0.3) * 3; let targetY = n.baseY + Math.cos(time + n.row * 0.3) * 3;
+                if (mouse.x !== null) { const dx = n.baseX - mouse.x; const dy = n.baseY - mouse.y; const dist = Math.hypot(dx, dy); if (dist < radius) { const force = (radius - dist) / radius; const angle = Math.atan2(dy, dx); if (interaction === 'repel') { targetX += Math.cos(angle) * force * 40; targetY += Math.sin(angle) * force * 40; } if (interaction === 'wave') { const wave = Math.sin(dist * 0.05 - time * 3) * force * 25; targetX += Math.cos(angle) * wave; targetY += Math.sin(angle) * wave; } if (interaction === 'attract') { targetX -= Math.cos(angle) * force * 30; targetY -= Math.sin(angle) * force * 30; } } }
+                n.x += (targetX - n.x) * 0.1; n.y += (targetY - n.y) * 0.1;
+            });
+            const cols = Math.ceil(canvas.width / density) + 2; const rows = Math.ceil(canvas.height / density) + 2;
+            nodes.forEach((n, i) => {
+                if (n.col < cols - 1) { const right = i + rows; if (right < nodes.length) drawLine(n, nodes[right]); }
+                if (n.row < rows - 1) { const bottom = i + 1; if (bottom < nodes.length && nodes[bottom].col === n.col) drawLine(n, nodes[bottom]); }
+                let size = 2; let gSize = 0; if (mouse.x !== null) { const dist = Math.hypot(n.x - mouse.x, n.y - mouse.y); if (dist < radius) { const p = 1 - (dist / radius); size = 2 + p * 3; gSize = p * 15; } }
+                if (gSize > 0) { const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, gSize); grad.addColorStop(0, hexToRgba(glowColor, 0.6)); grad.addColorStop(1, 'transparent'); ctx.beginPath(); ctx.arc(n.x, n.y, gSize, 0, Math.PI * 2); ctx.fillStyle = grad; ctx.fill(); }
+                ctx.beginPath(); ctx.arc(n.x, n.y, size, 0, Math.PI * 2); ctx.fillStyle = lineColor; ctx.fill();
+            });
+            requestAnimationFrame(animate);
+        };
+        animate();
+    }
+
+    // Algoritmo de Renderizado con Reconciliación Selectiva
     // Algoritmo de Renderizado con Reconciliación Selectiva
     updateNode(path, partialData) {
         const domNode = this.nodeRegistry.get(path);
@@ -711,21 +1159,20 @@ class V4Engine {
                 const vx = physics.velocity.x || 0;
                 const vy = physics.velocity.y || 0;
 
-                // Mapear inercia/rotación
-                const currentTransform = domNode.style.transform || '';
-
-                let tx = 0, ty = 0;
-                const match = currentTransform.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/);
-                if (match) {
-                    tx = parseFloat(match[1]);
-                    ty = parseFloat(match[2]);
-                }
+                // Use a dedicated physics CSS variable to avoid destroying the Transform Stack
+                let tx = parseFloat(domNode.getAttribute('data-v4-px') || '0');
+                let ty = parseFloat(domNode.getAttribute('data-v4-py') || '0');
 
                 // Culling Lógico (Sleep Mode)
                 if (Math.abs(vx) > 0.0001 || Math.abs(vy) > 0.0001) {
                     tx += vx * dt;
                     ty += vy * dt;
-                    domNode.style.transform = `translate(${tx}px, ${ty}px)`;
+                    domNode.setAttribute('data-v4-px', tx);
+                    domNode.setAttribute('data-v4-py', ty);
+
+                    // We hijack --dyn-drag to push physics offsets, or add a new var if needed.
+                    // Let's just push it to --dyn-drag so it plays nice with the stack
+                    domNode.style.setProperty('--dyn-drag', `translate3d(${tx}px, ${ty}px, 0)`);
                 }
             }
         }
