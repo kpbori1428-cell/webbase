@@ -24,217 +24,1146 @@
             "backgroundColor": "#252526",
             "borderRight": "1px solid #3c3c3c",
             "display": "flex",
-            "flexDirection": "column"
+            "flexDirection": "column",
+            "overflowY": "auto",
+            "padding": "0"
           }
         },
         "children": [
           {
             "tag": "div",
-            "path": "builder.leftSidebar.headerLayers",
-            "text": "LAYERS",
+            "text": "Tipograf\u00eda",
             "properties": {
               "style": {
-                "padding": "15px",
-                "backgroundColor": "#333",
+                "padding": "16px 20px",
+                "backgroundColor": "#262626",
+                "color": "#e5e7eb",
                 "fontWeight": "bold",
                 "fontSize": "14px",
-                "letterSpacing": "1px",
-                "borderBottom": "1px solid #3c3c3c"
+                "borderBottom": "1px solid #3c3c3c",
+                "borderTop": "none",
+                "letterSpacing": "0.5px",
+                "textTransform": "uppercase"
               }
             }
           },
           {
             "tag": "div",
-            "path": "builder.leftSidebar.tree",
-            "id": "tree-view",
-            "text": "Tree Logic will mount here via JS...",
             "properties": {
               "style": {
-                "flex": "1",
-                "overflowY": "auto",
-                "padding": "10px",
-                "fontSize": "13px",
-                "color": "#858585",
-                "fontStyle": "italic",
-                "whiteSpace": "nowrap"
-              }
-            },
-            "directives": {
-              "initTree": true
-            }
-          },
-          {
-            "tag": "div",
-            "path": "builder.leftSidebar.headerPalette",
-            "text": "COMPONENTS (DRAG TO CANVAS)",
-            "properties": {
-              "style": {
-                "padding": "15px",
-                "backgroundColor": "#333",
-                "fontWeight": "bold",
-                "fontSize": "14px",
-                "letterSpacing": "1px",
-                "borderTop": "1px solid #3c3c3c",
-                "borderBottom": "1px solid #3c3c3c"
-              }
-            }
-          },
-          {
-            "tag": "div",
-            "path": "builder.leftSidebar.palette",
-            "id": "palette",
-            "properties": {
-              "style": {
-                "padding": "10px",
-                "display": "flex",
-                "flexWrap": "wrap",
-                "gap": "8px"
+                "display": "grid",
+                "gridTemplateColumns": "repeat(2, 1fr)",
+                "gap": "10px",
+                "padding": "15px 20px",
+                "backgroundColor": "#171717"
               }
             },
             "children": [
               {
                 "tag": "div",
-                "text": "Box / Container",
                 "properties": {
                   "style": {
-                    "background": "#333",
-                    "padding": "8px",
-                    "borderRadius": "4px",
-                    "fontSize": "12px",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
                     "cursor": "grab",
-                    "border": "1px solid #555",
-                    "width": "calc(50% - 14px)",
-                    "textAlign": "center"
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
                   },
                   "attributes": {
                     "draggable": "true",
-                    "data-tag": "div",
-                    "data-text": "",
-                    "data-v4-container": "true"
-                  }
+                    "data-json": "{\"tag\": \"h1\", \"text\": \"A\\u00f1ade un gran t\\u00edtulo\", \"properties\": {\"style\": {\"fontSize\": \"48px\", \"fontWeight\": \"bold\", \"color\": \"#1f2937\", \"margin\": \"0\"}}}"
+                  },
+                  "paletteItem": true
                 },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "H1",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "T\u00edtulo Principal",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
                 "directives": {
                   "paletteItem": true
                 }
               },
               {
                 "tag": "div",
-                "text": "Heading",
                 "properties": {
                   "style": {
-                    "background": "#333",
-                    "padding": "8px",
-                    "borderRadius": "4px",
-                    "fontSize": "12px",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
                     "cursor": "grab",
-                    "border": "1px solid #555",
-                    "width": "calc(50% - 14px)",
-                    "textAlign": "center"
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
                   },
                   "attributes": {
                     "draggable": "true",
-                    "data-tag": "h2",
-                    "data-text": "New Heading"
-                  }
+                    "data-json": "{\"tag\": \"h2\", \"text\": \"A\\u00f1ade un subt\\u00edtulo\", \"properties\": {\"style\": {\"fontSize\": \"24px\", \"fontWeight\": \"600\", \"color\": \"#4b5563\", \"margin\": \"0\"}}}"
+                  },
+                  "paletteItem": true
                 },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "H2",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Subt\u00edtulo",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
                 "directives": {
                   "paletteItem": true
                 }
               },
               {
                 "tag": "div",
-                "text": "Text",
                 "properties": {
                   "style": {
-                    "background": "#333",
-                    "padding": "8px",
-                    "borderRadius": "4px",
-                    "fontSize": "12px",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
                     "cursor": "grab",
-                    "border": "1px solid #555",
-                    "width": "calc(50% - 14px)",
-                    "textAlign": "center"
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
                   },
                   "attributes": {
                     "draggable": "true",
-                    "data-tag": "p",
-                    "data-text": "Paragraph text."
-                  }
+                    "data-json": "{\"tag\": \"p\", \"text\": \"Empieza a escribir un peque\\u00f1o texto aqu\\u00ed.\", \"properties\": {\"style\": {\"fontSize\": \"16px\", \"color\": \"#6b7280\", \"lineHeight\": \"1.5\"}}}"
+                  },
+                  "paletteItem": true
                 },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "P",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "P\u00e1rrafo",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
+                "directives": {
+                  "paletteItem": true
+                }
+              }
+            ]
+          },
+          {
+            "tag": "div",
+            "text": "Formas B\u00e1sicas",
+            "properties": {
+              "style": {
+                "padding": "16px 20px",
+                "backgroundColor": "#262626",
+                "color": "#e5e7eb",
+                "fontWeight": "bold",
+                "fontSize": "14px",
+                "borderBottom": "1px solid #3c3c3c",
+                "borderTop": "1px solid #3c3c3c",
+                "letterSpacing": "0.5px",
+                "textTransform": "uppercase"
+              }
+            }
+          },
+          {
+            "tag": "div",
+            "properties": {
+              "style": {
+                "display": "grid",
+                "gridTemplateColumns": "repeat(2, 1fr)",
+                "gap": "10px",
+                "padding": "15px 20px",
+                "backgroundColor": "#171717"
+              }
+            },
+            "children": [
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "grab",
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-json": "{\"tag\": \"div\", \"properties\": {\"style\": {\"width\": \"100px\", \"height\": \"100px\", \"backgroundColor\": \"#3b82f6\"}}}"
+                  },
+                  "paletteItem": true
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "\u2b1b",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Cuadrado",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
                 "directives": {
                   "paletteItem": true
                 }
               },
               {
                 "tag": "div",
-                "text": "Button",
                 "properties": {
                   "style": {
-                    "background": "#333",
-                    "padding": "8px",
-                    "borderRadius": "4px",
-                    "fontSize": "12px",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
                     "cursor": "grab",
-                    "border": "1px solid #555",
-                    "width": "calc(50% - 14px)",
-                    "textAlign": "center"
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
                   },
                   "attributes": {
                     "draggable": "true",
-                    "data-tag": "button",
-                    "data-text": "Click Me"
-                  }
+                    "data-json": "{\"tag\": \"div\", \"properties\": {\"style\": {\"width\": \"100px\", \"height\": \"100px\", \"backgroundColor\": \"#ef4444\", \"borderRadius\": \"50%\"}}}"
+                  },
+                  "paletteItem": true
                 },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "\ud83d\udd35",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "C\u00edrculo",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
                 "directives": {
                   "paletteItem": true
                 }
               },
               {
                 "tag": "div",
-                "text": "Image",
                 "properties": {
                   "style": {
-                    "background": "#333",
-                    "padding": "8px",
-                    "borderRadius": "4px",
-                    "fontSize": "12px",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
                     "cursor": "grab",
-                    "border": "1px solid #555",
-                    "width": "calc(100% - 22px)",
-                    "textAlign": "center"
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
                   },
                   "attributes": {
                     "draggable": "true",
-                    "data-tag": "img",
-                    "data-text": ""
-                  }
+                    "data-json": "{\"tag\": \"div\", \"properties\": {\"style\": {\"width\": \"150px\", \"height\": \"50px\", \"backgroundColor\": \"#10b981\", \"borderRadius\": \"25px\"}}}"
+                  },
+                  "paletteItem": true
                 },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "\ud83d\udc8a",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "P\u00edldora",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
                 "directives": {
                   "paletteItem": true
                 }
               },
               {
                 "tag": "div",
-                "text": "Hero Section",
                 "properties": {
                   "style": {
-                    "background": "linear-gradient(135deg, #0ea5e9, #8b5cf6)",
-                    "padding": "8px",
-                    "borderRadius": "4px",
-                    "fontSize": "12px",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
                     "cursor": "grab",
-                    "border": "1px solid #555",
-                    "width": "calc(100% - 22px)",
-                    "textAlign": "center",
-                    "color": "white",
-                    "fontWeight": "bold"
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
                   },
                   "attributes": {
                     "draggable": "true",
-                    "data-tag": "div",
-                    "data-json": "{\"tag\": \"div\", \"properties\": {\"style\": {\"display\": \"flex\", \"flexDirection\": \"column\", \"alignItems\": \"center\", \"justifyContent\": \"center\", \"padding\": \"60px\", \"backgroundColor\": \"rgba(30, 30, 46, 0.8)\", \"borderRadius\": \"32px\", \"border\": \"1px solid rgba(255,255,255,0.1)\", \"boxShadow\": \"0 20px 40px rgba(0,0,0,0.5)\", \"backdropFilter\": \"blur(20px)\"}}, \"directives\": {\"lookAtMouse\": {\"maxRotation\": 10, \"lerp\": 0.1}}, \"children\": [{\"tag\": \"h1\", \"text\": \"Tu Nuevo Mundo\", \"properties\": {\"style\": {\"fontSize\": \"4rem\", \"margin\": \"0 0 20px 0\", \"color\": \"white\"}}}, {\"tag\": \"p\", \"text\": \"Dise\\u00f1o infinito guiado por datos.\", \"properties\": {\"style\": {\"fontSize\": \"1.5rem\", \"color\": \"#94a3b8\", \"margin\": \"0 0 40px 0\"}}}, {\"tag\": \"button\", \"text\": \"Explorar V4\", \"properties\": {\"style\": {\"padding\": \"15px 30px\", \"borderRadius\": \"50px\", \"border\": \"none\", \"backgroundColor\": \"#0ea5e9\", \"color\": \"white\", \"fontSize\": \"1.2rem\", \"fontWeight\": \"bold\", \"cursor\": \"pointer\"}}}]}"
-                  }
+                    "data-json": "{\"tag\": \"div\", \"properties\": {\"style\": {\"width\": \"100%\", \"height\": \"2px\", \"backgroundColor\": \"#d1d5db\"}}}"
+                  },
+                  "paletteItem": true
                 },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "\u2796",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "L\u00ednea H",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
+                "directives": {
+                  "paletteItem": true
+                }
+              }
+            ]
+          },
+          {
+            "tag": "div",
+            "text": "Botones",
+            "properties": {
+              "style": {
+                "padding": "16px 20px",
+                "backgroundColor": "#262626",
+                "color": "#e5e7eb",
+                "fontWeight": "bold",
+                "fontSize": "14px",
+                "borderBottom": "1px solid #3c3c3c",
+                "borderTop": "1px solid #3c3c3c",
+                "letterSpacing": "0.5px",
+                "textTransform": "uppercase"
+              }
+            }
+          },
+          {
+            "tag": "div",
+            "properties": {
+              "style": {
+                "display": "grid",
+                "gridTemplateColumns": "repeat(2, 1fr)",
+                "gap": "10px",
+                "padding": "15px 20px",
+                "backgroundColor": "#171717"
+              }
+            },
+            "children": [
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "grab",
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-json": "{\"tag\": \"button\", \"text\": \"Bot\\u00f3n\", \"properties\": {\"style\": {\"padding\": \"12px 24px\", \"backgroundColor\": \"#8b5cf6\", \"color\": \"white\", \"border\": \"none\", \"borderRadius\": \"8px\", \"fontWeight\": \"bold\", \"cursor\": \"pointer\"}}}"
+                  },
+                  "paletteItem": true
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "S\u00f3lido",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Primario",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
+                "directives": {
+                  "paletteItem": true
+                }
+              },
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "grab",
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-json": "{\"tag\": \"button\", \"text\": \"Bot\\u00f3n\", \"properties\": {\"style\": {\"padding\": \"10px 22px\", \"backgroundColor\": \"transparent\", \"color\": \"#8b5cf6\", \"border\": \"2px solid #8b5cf6\", \"borderRadius\": \"8px\", \"fontWeight\": \"bold\", \"cursor\": \"pointer\"}}}"
+                  },
+                  "paletteItem": true
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "Outline",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Secundario",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
+                "directives": {
+                  "paletteItem": true
+                }
+              },
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "grab",
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-json": "{\"tag\": \"button\", \"text\": \"Bot\\u00f3n\", \"properties\": {\"style\": {\"padding\": \"12px 24px\", \"backgroundColor\": \"transparent\", \"color\": \"#6b7280\", \"border\": \"none\", \"borderRadius\": \"8px\", \"fontWeight\": \"bold\", \"cursor\": \"pointer\"}}}"
+                  },
+                  "paletteItem": true
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "Ghost",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Fantasma",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
+                "directives": {
+                  "paletteItem": true
+                }
+              }
+            ]
+          },
+          {
+            "tag": "div",
+            "text": "Estructura (Layout)",
+            "properties": {
+              "style": {
+                "padding": "16px 20px",
+                "backgroundColor": "#262626",
+                "color": "#e5e7eb",
+                "fontWeight": "bold",
+                "fontSize": "14px",
+                "borderBottom": "1px solid #3c3c3c",
+                "borderTop": "1px solid #3c3c3c",
+                "letterSpacing": "0.5px",
+                "textTransform": "uppercase"
+              }
+            }
+          },
+          {
+            "tag": "div",
+            "properties": {
+              "style": {
+                "display": "grid",
+                "gridTemplateColumns": "repeat(2, 1fr)",
+                "gap": "10px",
+                "padding": "15px 20px",
+                "backgroundColor": "#171717"
+              }
+            },
+            "children": [
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "grab",
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-json": "{\"tag\": \"section\", \"properties\": {\"style\": {\"width\": \"100%\", \"minHeight\": \"200px\", \"padding\": \"40px\", \"backgroundColor\": \"#f9fafb\", \"border\": \"1px dashed #d1d5db\"}}}"
+                  },
+                  "paletteItem": true
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "\ud83d\udce6",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Secci\u00f3n Vacia",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
+                "directives": {
+                  "paletteItem": true
+                }
+              },
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "grab",
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-json": "{\"tag\": \"div\", \"properties\": {\"style\": {\"display\": \"flex\", \"flexDirection\": \"row\", \"gap\": \"20px\", \"width\": \"100%\", \"minHeight\": \"100px\", \"backgroundColor\": \"rgba(255,255,255,0.5)\", \"border\": \"1px dashed #9ca3af\"}}}"
+                  },
+                  "paletteItem": true
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "\u27a1\ufe0f",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Fila Flex",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
+                "directives": {
+                  "paletteItem": true
+                }
+              },
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "grab",
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-json": "{\"tag\": \"div\", \"properties\": {\"style\": {\"display\": \"flex\", \"flexDirection\": \"column\", \"gap\": \"20px\", \"width\": \"100%\", \"minHeight\": \"200px\", \"backgroundColor\": \"rgba(255,255,255,0.5)\", \"border\": \"1px dashed #9ca3af\"}}}"
+                  },
+                  "paletteItem": true
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "\u2b07\ufe0f",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Columna Flex",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
+                "directives": {
+                  "paletteItem": true
+                }
+              }
+            ]
+          },
+          {
+            "tag": "div",
+            "text": "Multimedia",
+            "properties": {
+              "style": {
+                "padding": "16px 20px",
+                "backgroundColor": "#262626",
+                "color": "#e5e7eb",
+                "fontWeight": "bold",
+                "fontSize": "14px",
+                "borderBottom": "1px solid #3c3c3c",
+                "borderTop": "1px solid #3c3c3c",
+                "letterSpacing": "0.5px",
+                "textTransform": "uppercase"
+              }
+            }
+          },
+          {
+            "tag": "div",
+            "properties": {
+              "style": {
+                "display": "grid",
+                "gridTemplateColumns": "repeat(2, 1fr)",
+                "gap": "10px",
+                "padding": "15px 20px",
+                "backgroundColor": "#171717"
+              }
+            },
+            "children": [
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "grab",
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-json": "{\"tag\": \"img\", \"properties\": {\"style\": {\"width\": \"100%\", \"maxWidth\": \"400px\", \"borderRadius\": \"12px\"}, \"attributes\": {\"src\": \"https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?w=800&q=80\"}}}"
+                  },
+                  "paletteItem": true
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "\ud83d\uddbc\ufe0f",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Imagen Demo",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
+                "directives": {
+                  "paletteItem": true
+                }
+              },
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "grab",
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-json": "{\"tag\": \"img\", \"properties\": {\"style\": {\"width\": \"100px\", \"height\": \"100px\", \"borderRadius\": \"50%\", \"objectFit\": \"cover\"}, \"attributes\": {\"src\": \"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80\"}}}"
+                  },
+                  "paletteItem": true
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "\ud83d\udc64",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Avatar",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
+                "directives": {
+                  "paletteItem": true
+                }
+              }
+            ]
+          },
+          {
+            "tag": "div",
+            "text": "Formularios",
+            "properties": {
+              "style": {
+                "padding": "16px 20px",
+                "backgroundColor": "#262626",
+                "color": "#e5e7eb",
+                "fontWeight": "bold",
+                "fontSize": "14px",
+                "borderBottom": "1px solid #3c3c3c",
+                "borderTop": "1px solid #3c3c3c",
+                "letterSpacing": "0.5px",
+                "textTransform": "uppercase"
+              }
+            }
+          },
+          {
+            "tag": "div",
+            "properties": {
+              "style": {
+                "display": "grid",
+                "gridTemplateColumns": "repeat(2, 1fr)",
+                "gap": "10px",
+                "padding": "15px 20px",
+                "backgroundColor": "#171717"
+              }
+            },
+            "children": [
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "grab",
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-json": "{\"tag\": \"input\", \"properties\": {\"style\": {\"padding\": \"12px\", \"border\": \"1px solid #d1d5db\", \"borderRadius\": \"8px\", \"width\": \"250px\"}, \"attributes\": {\"placeholder\": \"Escribe aqu\\u00ed...\", \"type\": \"text\"}}}"
+                  },
+                  "paletteItem": true
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "Input",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Caja de Texto",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
+                "directives": {
+                  "paletteItem": true
+                }
+              },
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "grab",
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-json": "{\"tag\": \"input\", \"properties\": {\"style\": {\"padding\": \"12px\", \"border\": \"1px solid #d1d5db\", \"borderRadius\": \"8px\", \"width\": \"250px\"}, \"attributes\": {\"placeholder\": \"Contrase\\u00f1a\", \"type\": \"password\"}}}"
+                  },
+                  "paletteItem": true
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "***",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Contrase\u00f1a",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
+                "directives": {
+                  "paletteItem": true
+                }
+              },
+              {
+                "tag": "div",
+                "properties": {
+                  "style": {
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "cursor": "grab",
+                    "backgroundColor": "#2a2a2a",
+                    "padding": "15px 10px",
+                    "borderRadius": "10px",
+                    "border": "1px solid #3c3c3c",
+                    "transition": "all 0.2s ease",
+                    "boxShadow": "0 4px 6px -1px rgba(0, 0, 0, 0.5)"
+                  },
+                  "attributes": {
+                    "draggable": "true",
+                    "data-json": "{\"tag\": \"form\", \"properties\": {\"style\": {\"background\": \"white\", \"padding\": \"32px\", \"borderRadius\": \"16px\", \"boxShadow\": \"0 20px 25px -5px rgba(0,0,0,0.1)\", \"display\": \"flex\", \"flexDirection\": \"column\", \"gap\": \"16px\", \"width\": \"350px\"}}, \"children\": [{\"tag\": \"h3\", \"text\": \"Iniciar Sesi\\u00f3n\", \"properties\": {\"style\": {\"margin\": \"0 0 16px 0\", \"color\": \"#1f2937\", \"fontSize\": \"24px\"}}}, {\"tag\": \"input\", \"properties\": {\"attributes\": {\"placeholder\": \"Email\"}, \"style\": {\"padding\": \"12px\", \"border\": \"1px solid #d1d5db\", \"borderRadius\": \"8px\", \"width\": \"100%\"}}}, {\"tag\": \"input\", \"properties\": {\"attributes\": {\"type\": \"password\", \"placeholder\": \"Password\"}, \"style\": {\"padding\": \"12px\", \"border\": \"1px solid #d1d5db\", \"borderRadius\": \"8px\", \"width\": \"100%\"}}}, {\"tag\": \"button\", \"text\": \"Login\", \"properties\": {\"style\": {\"padding\": \"12px\", \"background\": \"#3b82f6\", \"color\": \"white\", \"border\": \"none\", \"borderRadius\": \"8px\", \"cursor\": \"pointer\", \"fontWeight\": \"bold\", \"width\": \"100%\", \"marginTop\": \"8px\"}}}]}"
+                  },
+                  "paletteItem": true
+                },
+                "children": [
+                  {
+                    "tag": "div",
+                    "text": "Login",
+                    "properties": {
+                      "style": {
+                        "fontSize": "24px",
+                        "color": "#9ca3af",
+                        "marginBottom": "8px",
+                        "fontWeight": "bold",
+                        "textAlign": "center"
+                      }
+                    }
+                  },
+                  {
+                    "tag": "span",
+                    "text": "Form Completo",
+                    "properties": {
+                      "style": {
+                        "fontSize": "11px",
+                        "color": "#d1d5db",
+                        "textAlign": "center",
+                        "lineHeight": "1.2"
+                      }
+                    }
+                  }
+                ],
                 "directives": {
                   "paletteItem": true
                 }

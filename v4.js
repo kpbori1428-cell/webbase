@@ -727,8 +727,12 @@ class V4Engine {
             if (nodeData.directives.paletteItem) {
                 node.setAttribute('draggable', 'true');
                 node.addEventListener('dragstart', (e) => {
-                    e.dataTransfer.setData('v4/new-tag', (nodeData.properties?.attributes?.['data-tag']) || node.getAttribute('data-tag'));
-                    e.dataTransfer.setData('v4/new-text', (nodeData.properties?.attributes?.['data-text']) || node.getAttribute('data-text'));
+                    e.dataTransfer.setData('v4/new-tag', (nodeData.properties?.attributes?.['data-tag']) || node.getAttribute('data-tag') || '');
+                    e.dataTransfer.setData('v4/new-text', (nodeData.properties?.attributes?.['data-text']) || node.getAttribute('data-text') || '');
+                    const jsonStr = nodeData.properties?.attributes?.['data-json'] || node.getAttribute('data-json');
+                    if (jsonStr) {
+                        e.dataTransfer.setData('v4/new-json', jsonStr);
+                    }
                     e.dataTransfer.effectAllowed = 'copy';
                 });
             }
