@@ -87,137 +87,7 @@ class V4Engine {
             // Render root
             this.render();
 
-        // --- INFINITE CANVAS PAN & ZOOM (BUILDER MODE ONLY) ---
-        if (window.parent !== window) {
-            let isPanning = false;
-            let panStartX = 0, panStartY = 0;
-            let currentPanX = 0, currentPanY = 0;
-            let currentZoom = 1;
 
-            this.rootElement.style.transformOrigin = '0 0';
-            this.rootElement.style.width = '100vw';
-            this.rootElement.style.height = '100vh';
-            this.rootElement.style.position = 'absolute';
-            this.rootElement.style.top = '0';
-            this.rootElement.style.left = '0';
-
-            const updateCanvasView = () => {
-                this.rootElement.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoom})`;
-            };
-
-            // Spacebar + Drag or Middle Mouse Button to Pan
-            let spacePressed = false;
-            // Global Click to close context menus
-        window.addEventListener("click", () => {
-            document.querySelectorAll(".v4-context-menu").forEach(m => m.remove());
-        });
-
-        // 3. Multi-Selection Marquee Box (Builder Mode)
-        let marqueeBox = null; let startMarqueeX = 0, startMarqueeY = 0;
-
-        document.body.addEventListener('mousedown', (e) => {
-            if (e.target === document.body || e.target === this.rootElement) {
-                document.querySelectorAll('[data-v4-selected]').forEach(el => { el.style.outline = el.getAttribute('data-v4-old-outline') || ''; el.style.outlineOffset = el.getAttribute('data-v4-old-offset') || ''; el.removeAttribute('data-v4-selected'); });
-                document.querySelectorAll(".v4-resize-handle").forEach(h => h.remove());
-
-                if (e.button === 0 && !e.shiftKey && !spacePressed) {
-                    startMarqueeX = e.clientX; startMarqueeY = e.clientY;
-                    marqueeBox = document.createElement('div');
-                    marqueeBox.style.position = 'fixed'; marqueeBox.style.border = '1px solid rgba(0, 122, 204, 0.8)'; marqueeBox.style.backgroundColor = 'rgba(0, 122, 204, 0.1)'; marqueeBox.style.zIndex = '999999'; marqueeBox.style.pointerEvents = 'none'; marqueeBox.style.left = startMarqueeX + 'px'; marqueeBox.style.top = startMarqueeY + 'px'; marqueeBox.style.width = '0px'; marqueeBox.style.height = '0px';
-                    document.body.appendChild(marqueeBox);
-                }
-            }
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (marqueeBox) {
-                marqueeBox.style.left = Math.min(startMarqueeX, e.clientX) + 'px'; marqueeBox.style.top = Math.min(startMarqueeY, e.clientY) + 'px';
-                marqueeBox.style.width = Math.abs(e.clientX - startMarqueeX) + 'px'; marqueeBox.style.height = Math.abs(e.clientY - startMarqueeY) + 'px';
-            }
-        });
-
-        document.addEventListener('mouseup', (e) => {
-            if (marqueeBox) {
-                const boxRect = marqueeBox.getBoundingClientRect();
-                const selectedPaths = [];
-                document.querySelectorAll('[data-v4-path]').forEach(node => {
-                    const nodeRect = node.getBoundingClientRect();
-                    if (!(boxRect.right < nodeRect.left || boxRect.left > nodeRect.right || boxRect.bottom < nodeRect.top || boxRect.top > nodeRect.bottom)) {
-                        node.setAttribute('data-v4-old-outline', node.style.outline || ''); node.setAttribute('data-v4-old-offset', node.style.outlineOffset || '');
-                        node.style.outline = '2px solid #007acc'; node.style.outlineOffset = '-2px'; node.setAttribute('data-v4-selected', 'true');
-                        selectedPaths.push(node.getAttribute('data-v4-path'));
-                    }
-                });
-                if (selectedPaths.length > 0) window.parent.postMessage({ type: 'V4_NODE_SELECTED', path: selectedPaths[0], nodeData: this.findNodeByPath(this.dataTree, selectedPaths[0]) }, '*');
-                marqueeBox.remove(); marqueeBox = null;
-            }
-        });
-
-        document.body.addEventListener('dblclick', (e) => {
-            if (e.target === document.body || e.target === this.rootElement) {
-                this.exitIsolationMode();
-            }
-        });
-
-        window.addEventListener('keydown', (e) => {
-                if (e.code === 'Space' && e.target === document.body) {
-                    e.preventDefault();
-                    spacePressed = true;
-                    document.body.style.cursor = 'grab';
-                }
-            });
-            window.addEventListener('keyup', (e) => {
-                if (e.code === 'Space') {
-                    spacePressed = false;
-                    if (!isPanning) document.body.style.cursor = 'default';
-                }
-            });
-
-            window.addEventListener('mousedown', (e) => {
-                if (e.button === 1 || (e.button === 0 && spacePressed)) {
-                    e.preventDefault();
-                    isPanning = true;
-                    panStartX = e.clientX - currentPanX;
-                    panStartY = e.clientY - currentPanY;
-                    document.body.style.cursor = 'grabbing';
-                }
-            });
-
-            window.addEventListener('mousemove', (e) => {
-                if (!isPanning) return;
-                currentPanX = e.clientX - panStartX;
-                currentPanY = e.clientY - panStartY;
-                updateCanvasView();
-            });
-
-            window.addEventListener('mouseup', (e) => {
-                if (isPanning) {
-                    isPanning = false;
-                    document.body.style.cursor = spacePressed ? 'grab' : 'default';
-                }
-            });
-
-            // Ctrl + Wheel to Zoom
-            window.addEventListener('wheel', (e) => {
-                if (e.ctrlKey || e.metaKey) {
-                    e.preventDefault();
-                    const zoomSensitivity = 0.001;
-                    const delta = -e.deltaY * zoomSensitivity;
-                    const newZoom = Math.min(Math.max(0.1, currentZoom + delta), 5); // Clamped between 10% and 500%
-
-                    const mouseX = e.clientX;
-                    const mouseY = e.clientY;
-
-                    currentPanX = mouseX - (mouseX - currentPanX) * (newZoom / currentZoom);
-                    currentPanY = mouseY - (mouseY - currentPanY) * (newZoom / currentZoom);
-                    currentZoom = newZoom;
-                    updateCanvasView();
-                }
-            }, { passive: false });
-
-            // Expose the zoom level globally so drag logic can compensate for scaled coordinates
-            window.__v4CanvasZoom = () => currentZoom;
-        }
 
 
             // Start Physics Loop
@@ -1270,7 +1140,26 @@ class V4Engine {
     initNetwork(config) {
         if (!config || config.type === 'none') return;
         let canvas = document.getElementById('v4-network-canvas');
-        if (!canvas) { canvas = document.createElement('canvas'); canvas.id = 'v4-network-canvas'; canvas.style.position = 'fixed'; canvas.style.top = '0'; canvas.style.left = '0'; canvas.style.width = '100vw'; canvas.style.height = '100vh'; canvas.style.pointerEvents = 'none'; canvas.style.zIndex = '-1'; document.body.insertBefore(canvas, document.body.firstChild); }
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.id = 'v4-network-canvas';
+            canvas.style.position = 'fixed';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.width = '100vw';
+            canvas.style.height = '100vh';
+            canvas.style.pointerEvents = 'none';
+            canvas.style.zIndex = '-1';
+
+            // Si estamos en el modo Builder, nos aseguramos que nunca intercepte eventos
+            // y lo mandamos bien al fondo
+            if (window.parent !== window) {
+                canvas.style.pointerEvents = 'none';
+                canvas.style.zIndex = '-99999';
+            }
+
+            document.body.insertBefore(canvas, document.body.firstChild);
+        }
         const ctx = canvas.getContext('2d'); const nodes = []; const mouse = { x: null, y: null }; let time = 0;
         const density = config.density || 50; const lineColor = config.lineColor || '#0ea5e9'; const glowColor = config.glowColor || '#7dd3fc'; const radius = config.radius || 150; const interaction = config.interaction || 'repel';
 
