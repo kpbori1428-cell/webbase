@@ -240,6 +240,13 @@ class V4Engine {
         this.nodeRegistry.clear();
         this.physicsNodes = [];
         this.mount(this.dataTree.root, this.rootElement, 0);
+
+        // Ensure canvas tools are initialized once
+        if (!this._canvasToolsSetup) {
+            this.setupCanvasTools();
+            this._canvasToolsSetup = true;
+        }
+
         this.applySEO();
     }
 
@@ -251,7 +258,7 @@ class V4Engine {
         }
 
         // --- Generador Procedural de Instancias ---
-        if (nodeData.directives && nodeData.directives.instances && !nodeData.__isInstance) {
+        if (nodeData && nodeData.directives && nodeData.directives.instances && !nodeData.__isInstance) {
             const inst = nodeData.directives.instances;
             const cantidad = inst.count || 0;
 
@@ -312,7 +319,7 @@ class V4Engine {
 
 
     // Hydration de API
-        if (nodeData.directives && nodeData.directives.fetch) {
+        if (nodeData && nodeData.directives && nodeData.directives.fetch) {
             this.hydrateNode(nodeData, parentElement, depth);
             return; // Suspende renderizado hasta que la promesa resuelva
         }
@@ -332,7 +339,10 @@ class V4Engine {
         // --- Dynamic Transform Stacking (Física Avanzada V4) ---
         // Setup safe defaults
         node.style.setProperty('--base-transform', nodeData.properties?.style?.transform || 'translate3d(0,0,0)');
-        node.style.setProperty('--dyn-drag', 'translate3d(0,0,0)');
+
+                            if (window.__v4ShowGuides) window.__v4ShowGuides(null, null);
+                            node.style.setProperty('--dyn-drag', 'translate3d(0,0,0)');
+
         node.style.setProperty('--dyn-rotate', '');
         node.style.setProperty('--dyn-mouse-follow', 'translate3d(0,0,0)');
         node.style.setProperty('--dyn-look-at', 'rotateX(0deg) rotateY(0deg)');
@@ -526,7 +536,7 @@ class V4Engine {
                     } else {
                         newNode = {
                             id: 'node-' + Math.random().toString(36).substr(2, 9),
-                            tag: newTag,
+                            tag: newTag || 'div',
                             text: newText || '',
                             properties: { style: { position: 'absolute', left: dropX + 'px', top: dropY + 'px', padding: '10px', border: '1px dashed #7f8c8d' } }
                         };
@@ -574,10 +584,10 @@ class V4Engine {
 
 
         // --- LÓGICAS DECLARATIVAS (COMPORTAMIENTOS DINÁMICOS) ---
-        if (nodeData.directives) {
+        if (nodeData && nodeData.directives) {
 
             // Mouse Follow (Lerp offset)
-            if (nodeData.directives.mouseFollow) {
+            if (nodeData && nodeData.directives.mouseFollow) {
                 const config = nodeData.directives.mouseFollow;
                 const factor = config.factor || 0.1;
                 const lerp = config.lerp || 0.1;
@@ -597,7 +607,7 @@ class V4Engine {
             }
 
             // Look At Mouse (3D Tilt)
-            if (nodeData.directives.lookAtMouse) {
+            if (nodeData && nodeData.directives.lookAtMouse) {
                 const config = nodeData.directives.lookAtMouse;
                 const maxRot = config.maxRotation || 15;
                 const lerp = config.lerp || 0.1;
@@ -620,7 +630,7 @@ class V4Engine {
 
 
             // Interactive Scroll Parallax (Timeline Modifiers)
-            if (nodeData.directives.scrollAnimate) {
+            if (nodeData && nodeData.directives.scrollAnimate) {
                 const config = nodeData.directives.scrollAnimate;
                 const speedY = config.speedY || 0;
                 const scaleSpeed = config.scale || 0;
@@ -647,7 +657,7 @@ class V4Engine {
             }
 
             // Auto Animate (Continuous looping animation)
-            if (nodeData.directives.autoAnimate) {
+            if (nodeData && nodeData.directives.autoAnimate) {
                 const config = nodeData.directives.autoAnimate;
                 const speedX = config.rotateX || 0;
                 const speedY = config.rotateY || 0;
@@ -671,7 +681,7 @@ class V4Engine {
             }
 
             // Color Cycle
-            if (nodeData.directives.colorCycle) {
+            if (nodeData && nodeData.directives.colorCycle) {
                 const config = nodeData.directives.colorCycle;
                 const colors = config.colors || ['#ff0000', '#00ff00', '#0000ff'];
                 const prop = config.property || 'backgroundColor';
@@ -691,13 +701,13 @@ class V4Engine {
         }
 
         // Manejo de Formularios & Magnetic Data Binding (Reactividad Inversa)
-        if (nodeData.directives && (nodeData.directives.sync || nodeData.directives.syncTarget) && (tag === 'input' || tag === 'textarea')) {
+        if (nodeData && nodeData.directives && (nodeData.directives.sync || nodeData.directives.syncTarget) && (tag === 'input' || tag === 'textarea')) {
             node.value = nodeData.text || '';
             node.addEventListener('input', (e) => {
                 const newVal = e.target.value;
                 this.updateNode(nodeData.path, { text: newVal });
 
-                if (nodeData.directives.syncTarget) {
+                if (nodeData && nodeData.directives.syncTarget) {
                     // Actualizar el nodo destino mágicamente
                     this.updateNode(nodeData.directives.syncTarget, { text: newVal });
                 }
@@ -708,15 +718,15 @@ class V4Engine {
 
 
         // Builder Logic Directives (Restaurado como Directivas Declarativas)
-        if (nodeData.directives) {
+        if (nodeData && nodeData.directives) {
 
             // 1. Initialize Tree View when loaded
-            if (nodeData.directives.initTree) {
+            if (nodeData && nodeData.directives.initTree) {
                 this.treeViewContainer = node;
             }
 
             // 2. Refresh Tree Button
-            if (nodeData.directives.refreshTree) {
+            if (nodeData && nodeData.directives.refreshTree) {
                 node.addEventListener('click', () => {
                     const iframe = document.getElementById('canvas');
                     if (iframe) iframe.contentWindow.postMessage({ type: 'V4_GET_TREE' }, '*');
@@ -724,7 +734,7 @@ class V4Engine {
             }
 
             // 3. Make Palette Items Draggable
-            if (nodeData.directives.paletteItem) {
+            if (nodeData && nodeData.directives.paletteItem) {
                 node.setAttribute('draggable', 'true');
                 node.addEventListener('dragstart', (e) => {
                     e.dataTransfer.setData('v4/new-tag', (nodeData.properties?.attributes?.['data-tag']) || node.getAttribute('data-tag') || '');
@@ -738,7 +748,7 @@ class V4Engine {
             }
 
             // 4. Listen to Iframe Selection (Outer Builder mode)
-            if (nodeData.directives.iframeCanvas) {
+            if (nodeData && nodeData.directives.iframeCanvas) {
 
                 // Initialize engine when iframe mounts
                 node.addEventListener('load', () => {
@@ -775,11 +785,11 @@ class V4Engine {
                         document.getElementById('controls').style.display = 'block';
 
                         updateInput('prop-path', data.path);
-                        updateInput('prop-tag', data.nodeData.tag || 'div');
-                        updateInput('prop-text', data.nodeData.text || '');
+                        updateInput('prop-tag', (data.nodeData && data.nodeData.tag) ? data.nodeData.tag : 'div');
+                        updateInput('prop-text', (data.nodeData && data.nodeData.text) ? data.nodeData.text : '');
 
                         // Advanced Materials
-                        if (data.nodeData.properties && data.nodeData.properties.style) {
+                        if (data.nodeData && data.nodeData.properties && data.nodeData.properties.style) {
                             const styles = data.nodeData.properties.style;
                             updateInput('style-backgroundColor', styles.backgroundColor || '#ffffff');
                             updateInput('style-width', styles.width);
@@ -790,7 +800,7 @@ class V4Engine {
                         }
 
                         // Parse Magic Directives
-                        const d = data.nodeData.directives || {};
+                        const d = (data.nodeData && data.nodeData.directives) ? data.nodeData.directives : {};
                         updateInput('dir-syncTarget', d.syncTarget || '');
                         updateInput('dir-autoAnimate-amp', d.autoAnimate?.floatAmplitude || '');
                         updateInput('dir-autoAnimate-freq', d.autoAnimate?.floatFrequency || '');
@@ -895,7 +905,7 @@ class V4Engine {
         }
 
         // Physics registration
-        if (nodeData.directives && nodeData.directives.physics) {
+        if (nodeData && nodeData.directives && nodeData.directives.physics) {
             this.physicsNodes.push({ domNode: node, data: nodeData, physics: nodeData.directives.physics });
         }
 
@@ -940,6 +950,253 @@ class V4Engine {
             wrapper.appendChild(childrenContainer);
         }
         return wrapper;
+    }
+
+
+    // --- V4 TOTAL CANVAS TOOLS ---
+    setupCanvasTools() {
+        if (window.parent === window) return; // Only in Builder
+
+        // 1. Infinite Pan & Zoom
+        this.zoomLevel = 1;
+        this.panX = 0;
+        this.panY = 0;
+        this.isPanning = false;
+
+        // Ensure root element can be transformed
+        this.rootElement.style.transformOrigin = '0 0';
+        this.rootElement.style.position = 'relative';
+        this.rootElement.style.width = '100vw';
+        this.rootElement.style.height = '100vh';
+        this.rootElement.style.overflow = 'hidden';
+
+        const updateTransform = () => {
+            this.rootElement.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoomLevel})`;
+            // Expose zoom for drag/drop calculations
+            window.__v4CanvasZoom = () => this.zoomLevel;
+            window.__v4CanvasPan = () => ({x: this.panX, y: this.panY});
+        };
+        updateTransform();
+
+        window.addEventListener('keydown', e => {
+            if (e.code === 'Space' && !this.isPanning && document.activeElement.tagName !== 'INPUT') {
+                e.preventDefault();
+                this.isPanning = true;
+                document.body.style.cursor = 'grab';
+            }
+        });
+        window.addEventListener('keyup', e => {
+            if (e.code === 'Space') {
+                this.isPanning = false;
+                document.body.style.cursor = 'default';
+            }
+        });
+
+        let startPanX, startPanY, initialPanX, initialPanY;
+
+        // 2. Marquee Selection
+        this.isMarquee = false;
+        let startX, startY;
+        const marqueeBox = document.createElement('div');
+        marqueeBox.style.position = 'fixed';
+        marqueeBox.style.border = '1px solid #007acc';
+        marqueeBox.style.backgroundColor = 'rgba(0, 122, 204, 0.2)';
+        marqueeBox.style.pointerEvents = 'none';
+        marqueeBox.style.zIndex = '99999';
+        marqueeBox.style.display = 'none';
+        document.body.appendChild(marqueeBox);
+
+        this.rootElement.addEventListener('mousedown', (e) => {
+            if (e.target !== this.rootElement) return; // Only on empty canvas
+
+            if (this.isPanning) {
+                startPanX = e.clientX;
+                startPanY = e.clientY;
+                initialPanX = this.panX;
+                initialPanY = this.panY;
+                document.body.style.cursor = 'grabbing';
+
+                const onPanMove = (ev) => {
+                    this.panX = initialPanX + (ev.clientX - startPanX);
+                    this.panY = initialPanY + (ev.clientY - startPanY);
+                    updateTransform();
+                };
+                const onPanUp = () => {
+                    document.body.style.cursor = 'grab';
+                    window.removeEventListener('mousemove', onPanMove);
+                    window.removeEventListener('mouseup', onPanUp);
+                };
+                window.addEventListener('mousemove', onPanMove);
+                window.addEventListener('mouseup', onPanUp);
+                return;
+            }
+
+            // Start Marquee
+            this.isMarquee = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            marqueeBox.style.left = startX + 'px';
+            marqueeBox.style.top = startY + 'px';
+            marqueeBox.style.width = '0px';
+            marqueeBox.style.height = '0px';
+            marqueeBox.style.display = 'block';
+
+            // Deselect all first
+            document.querySelectorAll('[data-v4-selected]').forEach(el => {
+                el.style.outline = el.getAttribute('data-v4-old-outline') || '';
+                el.style.outlineOffset = el.getAttribute('data-v4-old-offset') || '';
+                el.removeAttribute('data-v4-selected');
+            });
+            document.querySelectorAll('.v4-resize-handle, .v4-rotate-handle, .v4-rotate-line').forEach(h => h.remove());
+
+            const onMarqueeMove = (ev) => {
+                const currentX = ev.clientX;
+                const currentY = ev.clientY;
+                const width = Math.abs(currentX - startX);
+                const height = Math.abs(currentY - startY);
+                marqueeBox.style.width = width + 'px';
+                marqueeBox.style.height = height + 'px';
+                marqueeBox.style.left = (currentX < startX ? currentX : startX) + 'px';
+                marqueeBox.style.top = (currentY < startY ? currentY : startY) + 'px';
+            };
+
+            const onMarqueeUp = (ev) => {
+                this.isMarquee = false;
+                marqueeBox.style.display = 'none';
+                window.removeEventListener('mousemove', onMarqueeMove);
+                window.removeEventListener('mouseup', onMarqueeUp);
+
+                // Calculate intersections
+                const mRect = marqueeBox.getBoundingClientRect();
+                const nodes = this.rootElement.querySelectorAll('[data-v4-path]');
+                const selectedPaths = [];
+
+                nodes.forEach(node => {
+                    if (node.style.position !== 'absolute') return; // Only select movable items
+                    const nRect = node.getBoundingClientRect();
+                    if (!(mRect.right < nRect.left ||
+                          mRect.left > nRect.right ||
+                          mRect.bottom < nRect.top ||
+                          mRect.top > nRect.bottom)) {
+                        // Intersects!
+                        node.setAttribute('data-v4-old-outline', node.style.outline || '');
+                        node.setAttribute('data-v4-old-offset', node.style.outlineOffset || '');
+                        node.style.outline = '2px solid #007acc';
+                        node.style.outlineOffset = '-2px';
+                        node.setAttribute('data-v4-selected', 'true');
+                        selectedPaths.push(node.getAttribute('data-v4-path'));
+                    }
+                });
+
+                if (selectedPaths.length > 0) {
+                    window.parent.postMessage({ type: 'V4_MULTI_SELECTED', paths: selectedPaths }, '*');
+                } else {
+                    window.parent.postMessage({ type: 'V4_NODE_SELECTED', path: 'builder.centerCanvas', nodeData: null }, '*');
+                }
+            };
+
+            window.addEventListener('mousemove', onMarqueeMove);
+            window.addEventListener('mouseup', onMarqueeUp);
+        });
+
+        // Zoom with Ctrl + Wheel
+        this.rootElement.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+                this.zoomLevel *= zoomFactor;
+                // Clamp zoom
+                this.zoomLevel = Math.max(0.1, Math.min(this.zoomLevel, 5));
+                updateTransform();
+            }
+        }, { passive: false });
+
+        // 3. Smart Guides (Snapping)
+        this.guides = {
+            v: document.createElement('div'),
+            h: document.createElement('div')
+        };
+        this.guides.v.style.cssText = 'position:fixed;width:1px;height:100vh;background:#e83e8c;top:0;left:0;display:none;z-index:9999;pointer-events:none;';
+        this.guides.h.style.cssText = 'position:fixed;width:100vw;height:1px;background:#e83e8c;top:0;left:0;display:none;z-index:9999;pointer-events:none;';
+        document.body.appendChild(this.guides.v);
+        document.body.appendChild(this.guides.h);
+
+        window.__v4ShowGuides = (x, y) => {
+            if (x !== null) { this.guides.v.style.display = 'block'; this.guides.v.style.left = x + 'px'; } else { this.guides.v.style.display = 'none'; }
+            if (y !== null) { this.guides.h.style.display = 'block'; this.guides.h.style.top = y + 'px'; } else { this.guides.h.style.display = 'none'; }
+        };
+
+        // 4. Context Menu
+        const contextMenu = document.createElement('div');
+        contextMenu.style.cssText = 'position:fixed;background:#2d2d2d;color:white;border:1px solid #444;box-shadow:0 4px 12px rgba(0,0,0,0.5);border-radius:6px;padding:4px 0;display:none;z-index:100000;font-family:sans-serif;font-size:12px;min-width:150px;';
+
+        const createMenuItem = (text, onClick) => {
+            const item = document.createElement('div');
+            item.textContent = text;
+            item.style.cssText = 'padding:8px 16px;cursor:pointer; transition: background 0.2s;';
+            item.addEventListener('mouseover', () => item.style.background = '#0ea5e9');
+            item.addEventListener('mouseout', () => item.style.background = 'transparent');
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                contextMenu.style.display = 'none';
+                onClick();
+            });
+            return item;
+        };
+
+        let contextTarget = null;
+
+        contextMenu.appendChild(createMenuItem('Traer al Frente', () => {
+            if (contextTarget) {
+                const z = parseInt(contextTarget.style.zIndex || 0) + 10;
+                this.updateNode(contextTarget.getAttribute('data-v4-path'), { properties: { style: { zIndex: z.toString() } } });
+                this.saveState();
+            }
+        }));
+        contextMenu.appendChild(createMenuItem('Enviar al Fondo', () => {
+            if (contextTarget) {
+                const z = parseInt(contextTarget.style.zIndex || 0) - 10;
+                this.updateNode(contextTarget.getAttribute('data-v4-path'), { properties: { style: { zIndex: z.toString() } } });
+                this.saveState();
+            }
+        }));
+        const sep = document.createElement('div'); sep.style.cssText = 'height:1px;background:#444;margin:4px 0;';
+        contextMenu.appendChild(sep);
+        contextMenu.appendChild(createMenuItem('Eliminar', () => {
+            if (contextTarget) {
+                // Delete logic
+                contextTarget.remove(); // Visual
+                // Note: full logic requires traversing tree and deleting from parent.
+                // For now, post message to builder to handle or do it here.
+                window.parent.postMessage({ type: 'V4_BUILDER_DELETE', path: contextTarget.getAttribute('data-v4-path') }, '*');
+            }
+        }));
+
+        document.body.appendChild(contextMenu);
+
+        window.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+
+            // Find V4 node
+            let target = e.target;
+            while(target && target !== document.body && !target.hasAttribute('data-v4-path')) {
+                target = target.parentElement;
+            }
+
+            if (target && target !== this.rootElement) {
+                contextTarget = target;
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = e.clientX + 'px';
+                contextMenu.style.top = e.clientY + 'px';
+            } else {
+                contextMenu.style.display = 'none';
+            }
+        });
+
+        window.addEventListener('click', () => {
+            contextMenu.style.display = 'none';
+        });
+
     }
 
     applyProperties(node, properties) {
